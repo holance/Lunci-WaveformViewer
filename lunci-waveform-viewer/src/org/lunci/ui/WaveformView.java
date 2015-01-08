@@ -25,10 +25,6 @@ import android.view.SurfaceView;
 public class WaveformView extends SurfaceView implements SurfaceHolder.Callback {
 
 	private WaveformPlotThread mPlotThread;
-
-	// plot area size
-	private int mWidth = 320;
-	private int mHeight = 240;
 	private Config mConfig = new Config();
 
 	public WaveformView(Context context, AttributeSet attrs) {
@@ -38,24 +34,14 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
-			int height) {
-		mPlotThread.interrupt();
-		try {
-			mPlotThread.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		mPlotThread = new WaveformPlotThread(getHolder(), this);
-		mPlotThread.updateWidthHeight(width, height);
-		mWidth = width;
-		mHeight = height;
-		mPlotThread.start();
+			int height) throws NullPointerException {
+		mPlotThread.setWidthHeight(width, height);
 	}
 
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		mPlotThread = new WaveformPlotThread(getHolder(), this);
-		mPlotThread.updateWidthHeight(this.getWidth(), this.getHeight());
+		mPlotThread.setWidthHeight(this.getWidth(), this.getHeight());
 		mPlotThread.start();
 	}
 
@@ -65,7 +51,7 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		try {
 			mPlotThread.join();
 		} catch (InterruptedException e) {
-
+			e.printStackTrace();
 		}
 	}
 
@@ -104,19 +90,19 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 	}
 
 	public int getmDataMax() {
-		return mConfig.DataMax;
+		return mConfig.DataMaxValue;
 	}
 
 	public void setmDataMax(int mDataMax) {
-		mConfig.DataMax = mDataMax;
+		mConfig.DataMaxValue = mDataMax;
 	}
 
 	public int getmDataMin() {
-		return mConfig.DataMin;
+		return mConfig.DataMinValue;
 	}
 
 	public void setmDataMin(int mDataMin) {
-		mConfig.DataMin = mDataMin;
+		mConfig.DataMinValue = mDataMin;
 	}
 
 	public void setConfig(Config config) {
@@ -130,10 +116,12 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 	}
 
 	public static class Config {
-		public int DataMax = 0;
-		public int DataMin = 0;
+		public int DataMaxValue = Integer.MAX_VALUE;
+		public int DataMinValue = Integer.MIN_VALUE;
 		public int BackgroundColor = 0xFF000000;
 		public int LineColor = 0xFF00FF00;
 		public int AxisColor = 0xFFFFFFFF;
+		public int PlotThreadPriority = Thread.NORM_PRIORITY;
+		public float ZoomRatio = 1;
 	}
 }
