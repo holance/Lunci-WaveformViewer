@@ -106,19 +106,19 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		}
 	}
 
-	public int getmDataMax() {
+	public int getDataMax() {
 		return mConfig.DataMaxValue;
 	}
 
-	public void setmDataMax(int mDataMax) {
+	public void setDataMax(int mDataMax) {
 		mConfig.DataMaxValue = mDataMax;
 	}
 
-	public int getmDataMin() {
+	public int getDataMin() {
 		return mConfig.DataMinValue;
 	}
 
-	public void setmDataMin(int mDataMin) {
+	public void setDataMin(int mDataMin) {
 		mConfig.DataMinValue = mDataMin;
 	}
 
