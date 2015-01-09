@@ -52,7 +52,7 @@ public class WaveformPlotThread extends Thread {
 	private final Paint mAxisPaint = new Paint();
 	private final Paint mBackgroundPaint = new Paint();
 	private WaveformView.Config mConfig = new WaveformView.Config();
-	private Float mScaling = 1f;
+	private float mScaling = 1f;
 	private boolean mClearScreenFlag = false;
 
 	public WaveformPlotThread(SurfaceHolder surfaceHolder, WaveformView view) {
@@ -66,7 +66,7 @@ public class WaveformPlotThread extends Thread {
 	public void setWidthHeight(int width, int height) {
 		if (this.isAlive()) {
 			Message.obtain(mHandler, MESSAGE_SET_WIDTH_HEIGHT, width, height)
-			.sendToTarget();
+					.sendToTarget();
 		} else {
 			updateWidthHeightSafe(width, height);
 		}
@@ -178,7 +178,7 @@ public class WaveformPlotThread extends Thread {
 		return lastY;
 	}
 
-	public BlockingQueue<int[]> getDataQueue() {
+	public synchronized BlockingQueue<int[]> getDataQueue() {
 		return mDataQueue;
 	}
 
@@ -206,20 +206,17 @@ public class WaveformPlotThread extends Thread {
 				|| mConfig.DefaultDataBufferSize != config.DefaultDataBufferSize)
 			mDataQueue = new ArrayBlockingQueue<int[]>(
 					config.DefaultDataBufferSize);
-			mConfig = config;
+		mConfig = config;
 	}
 
-	private void updateScaling(int height, int dataMax, int dataMin)
-			throws ArithmeticException {
-		synchronized (mScaling) {
-			mScaling = (float) height / (dataMax - dataMin);
-			clearWaveform();
-			if (BuildConfig.DEBUG) {
-				Log.d(TAG, "updating scaling:" + mScaling + "; height="
-						+ height);
-			}
+	private void updateScaling(int height, int dataMax, int dataMin) {
+		if (dataMax - dataMin == 0)
+			return;
+		mScaling = (float) height / (dataMax - dataMin);
+		clearWaveform();
+		if (BuildConfig.DEBUG) {
+			Log.d(TAG, "updating scaling:" + mScaling + "; height=" + height);
 		}
-
 	}
 
 	private final Handler mHandler = new Handler(new Handler.Callback() {
@@ -258,7 +255,7 @@ public class WaveformPlotThread extends Thread {
 				Log.i(TAG, "setConfig async");
 			}
 			Message.obtain(mHandler, MESSAGE_SET_CONFIG, 0, 0, config)
-					.sendToTarget();
+			.sendToTarget();
 		} else {
 			updateConfig(config);
 		}
