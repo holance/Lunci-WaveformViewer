@@ -16,7 +16,8 @@
 
 package org.lunci.ui;
 
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import org.lunci.waveform_viewer.BuildConfig;
 
@@ -42,14 +43,15 @@ public class WaveformPlotThread extends Thread {
 	private float mDeltaX = 4;// unit:pixel.
 	private float mCurrentX = 0;// unit:pixel.
 	private float mCurrentY = 0;// unit:pixel.
-	private final SynchronousQueue<Integer[]> mDataQueue = new SynchronousQueue<Integer[]>();
+	private BlockingQueue<int[]> mDataQueue;
 	private final Rect mClearRect = new Rect();
 	private float mClearRectWidthMultiplier = 4;
 	private final Paint mLinePaint = new Paint();
 	private final Paint mAxisPaint = new Paint();
 	private final Paint mBackgroundPaint = new Paint();
 	private WaveformView.Config mConfig = new WaveformView.Config();
-	private float mScaling = 1;
+	private Float mScaling = 1f;
+	private boolean mClearScreenFlag = false;
 
 	public WaveformPlotThread(SurfaceHolder surfaceHolder, WaveformView view) {
 		holder = surfaceHolder;
@@ -79,25 +81,38 @@ public class WaveformPlotThread extends Thread {
 
 	@Override
 	public void run() {
+		if (BuildConfig.DEBUG) {
+			Log.i(TAG, "Plot Thread is running");
+		}
 		Canvas c;
 		while (!stop) {
 			c = null;
 			try {
-				Integer[] y;
+				int[] y;
 				try {
 					y = mDataQueue.take();
-					mClearRect.left = (int) mCurrentX;
-					mClearRect.right = (int) (mCurrentX + mDeltaX
-							* mClearRectWidthMultiplier);
-					c = holder.lockCanvas(mClearRect);
-					synchronized (holder) {
-						if (c != null) {
-							c.drawRect(mClearRect, mBackgroundPaint);
-							mCurrentY = PlotPoints(c, mCurrentX, mDeltaX,
-									mCurrentY, y);
-							mCurrentX += mDeltaX;
-							if (mCurrentX >= mViewWidth) {
-								mCurrentX = 0;
+					if (mClearScreenFlag) {
+						mCurrentX = 0;
+						mCurrentY = mAxialXCoord.y;
+						c = holder.lockCanvas(null);
+						synchronized (holder) {
+							c.drawColor(mConfig.BackgroundColor);
+						}
+						mClearScreenFlag = false;
+					} else {
+						mClearRect.left = (int) mCurrentX;
+						mClearRect.right = (int) (mCurrentX + mDeltaX
+								* mClearRectWidthMultiplier);
+						c = holder.lockCanvas(mClearRect);
+						synchronized (holder) {
+							if (c != null) {
+								c.drawRect(mClearRect, mBackgroundPaint);
+								mCurrentY = PlotPoints(c, mCurrentX, mDeltaX,
+										mCurrentY, y);
+								mCurrentX += mDeltaX;
+								if (mCurrentX >= mViewWidth) {
+									mCurrentX = 0;
+								}
 							}
 						}
 					}
@@ -123,20 +138,19 @@ public class WaveformPlotThread extends Thread {
 	}
 
 	private float PlotPoints(Canvas canvas, float lastX, float deltaX,
-			float lastY, Integer[] newY) {
+			float lastY, int[] newY) {
 		final float delta = deltaX / newY.length;
-		for (Integer element : newY) {
+		final float scale = mScaling;
+		for (int element : newY) {
 			final float tempX = lastX + delta;
 			float scaledY = 0;
-			scaledY = mViewHeight - (element & mConfig.DataMaxValue) * mScaling;
+			scaledY = mViewHeight - (element & mConfig.DataMaxValue) * scale;
 			if (mConfig.ZoomRatio != 1) {
-				scaledY = scaledY > mAxialXCoord.y ? (scaledY - mAxialXCoord.y)
-						* mConfig.ZoomRatio + scaledY : scaledY
-						- (mAxialXCoord.y - scaledY) * mConfig.ZoomRatio;
+				float center = mAxialXCoord.y;
+				scaledY = scaledY > center ? (scaledY - center)
+						* mConfig.ZoomRatio + center : center
+						- (center - scaledY) * mConfig.ZoomRatio;
 			}
-			// if (BuildConfig.DEBUG) {
-			// Log.i(TAG, "orgY=" + element + "scaledY=" + scaledY);
-			// }
 			canvas.drawLine(lastX, lastY, tempX, scaledY, mLinePaint);
 			lastY = scaledY;
 			lastX = tempX;
@@ -144,8 +158,12 @@ public class WaveformPlotThread extends Thread {
 		return lastY;
 	}
 
-	public SynchronousQueue<Integer[]> getDataQueue() {
+	public BlockingQueue<int[]> getDataQueue() {
 		return mDataQueue;
+	}
+
+	public synchronized void setDataQueue(BlockingQueue<int[]> dataQueue) {
+		mDataQueue = dataQueue;
 	}
 
 	/**
@@ -157,21 +175,31 @@ public class WaveformPlotThread extends Thread {
 	}
 
 	private void updateConfig(WaveformView.Config config) {
-		mConfig = config;
 		updateScaling(mViewHeight, config.DataMaxValue, config.DataMinValue);
 		if (BuildConfig.DEBUG) {
 			Log.d(TAG, "updating config, dataMax=" + config.DataMaxValue
 					+ "; dataMin=" + config.DataMinValue);
 		}
 		this.setPriority(config.PlotThreadPriority);
+		if (mDataQueue == null
+				|| mConfig == null
+				|| mConfig.DefaultDataBufferSize != config.DefaultDataBufferSize)
+			mDataQueue = new ArrayBlockingQueue<int[]>(
+					config.DefaultDataBufferSize);
+		mConfig = config;
 	}
 
 	private void updateScaling(int height, int dataMax, int dataMin)
 			throws ArithmeticException {
-		mScaling = (float) height / (dataMax - dataMin);
-		if (BuildConfig.DEBUG) {
-			Log.d(TAG, "updating scaling:" + mScaling + "; height=" + height);
+		synchronized (mScaling) {
+			mScaling = (float) height / (dataMax - dataMin);
+			clearWaveform();
+			if (BuildConfig.DEBUG) {
+				Log.d(TAG, "updating scaling:" + mScaling + "; height="
+						+ height);
+			}
 		}
+
 	}
 
 	private final Handler mHandler = new Handler(new Handler.Callback() {
@@ -190,7 +218,7 @@ public class WaveformPlotThread extends Thread {
 				updateWidthHeightSafe(msg.arg1, msg.arg2);
 				break;
 			case MESSAGE_CLEAR_WAVEFORM:
-				clearWaveformSafe();
+				mClearScreenFlag = true;
 				break;
 			default:
 				result = false;
@@ -206,30 +234,13 @@ public class WaveformPlotThread extends Thread {
 
 	public void setConfig(WaveformView.Config config) {
 		if (this.isAlive()) {
+			if (BuildConfig.DEBUG) {
+				Log.i(TAG, "setConfig async");
+			}
 			Message.obtain(mHandler, MESSAGE_SET_CONFIG, 0, 0, config)
-					.sendToTarget();
+			.sendToTarget();
 		} else {
 			updateConfig(config);
-		}
-	}
-
-	private void clearWaveformSafe() {
-		if (holder == null)
-			return;
-		final Canvas c = holder.lockCanvas(null);
-		try {
-			synchronized (holder) {
-				if (c != null) {
-					c.drawColor(mConfig.BackgroundColor);
-					c.drawRect(mClearRect, mBackgroundPaint);
-				}
-			}
-		} catch (NullPointerException ex) {
-			ex.printStackTrace();
-		} finally {
-			if (c != null) {
-				holder.unlockCanvasAndPost(c);
-			}
 		}
 	}
 
