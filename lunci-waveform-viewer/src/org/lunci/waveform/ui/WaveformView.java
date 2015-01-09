@@ -147,8 +147,8 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		public int AxisColor = 0xFFFFFFFF;
 		public int PlotThreadPriority = Thread.NORM_PRIORITY;
 		public float ZoomRatio = 1;
+		public boolean AutoPositionAfterZoom = true;
 		public int DefaultDataBufferSize = 1000;
-		public boolean EnableAutoCenterY = true;
 	}
 
 	public synchronized void setDataQueue(BlockingQueue<int[]> dataQueue) {
