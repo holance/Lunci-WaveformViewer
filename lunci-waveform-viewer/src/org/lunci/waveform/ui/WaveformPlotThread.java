@@ -40,9 +40,11 @@ public class WaveformPlotThread extends Thread {
 	private int mViewHeight = 0;// unit:pixel.
 	private int mViewWidth = 0;// unit:pixel.
 	private final Point mAxialXCoord = new Point(0, 0);
+	private float mAutoPositionNominalValue = 0;
 	private float mDeltaX = 4;// unit:pixel.
 	private float mCurrentX = 0;// unit:pixel.
 	private float mCurrentY = 0;// unit:pixel.
+	private float mMaxY, mMinY;
 	private BlockingQueue<int[]> mDataQueue;
 	private final Rect mClearRect = new Rect();
 	private float mClearRectWidthMultiplier = 4;
@@ -64,7 +66,7 @@ public class WaveformPlotThread extends Thread {
 	public void setWidthHeight(int width, int height) {
 		if (this.isAlive()) {
 			Message.obtain(mHandler, MESSAGE_SET_WIDTH_HEIGHT, width, height)
-					.sendToTarget();
+			.sendToTarget();
 		} else {
 			updateWidthHeightSafe(width, height);
 		}
@@ -77,6 +79,9 @@ public class WaveformPlotThread extends Thread {
 		mClearRect.bottom = height;
 		updateScaling(height, mConfig.DataMaxValue, mConfig.DataMinValue);
 		mAxialXCoord.y = height / 2;
+		mAutoPositionNominalValue = height / 2;
+		mMaxY = Float.MIN_VALUE;
+		mMinY = Float.MAX_VALUE;
 	}
 
 	@Override
@@ -110,8 +115,23 @@ public class WaveformPlotThread extends Thread {
 								mCurrentY = PlotPoints(c, mCurrentX, mDeltaX,
 										mCurrentY, y);
 								mCurrentX += mDeltaX;
+								if (mConfig.AutoPositionAfterZoom) {
+									if (mMaxY < mCurrentY) {
+										mMaxY = mCurrentY;
+									} else if (mMinY > mCurrentY) {
+										mMinY = mCurrentY;
+									}
+								}
 								if (mCurrentX >= mViewWidth) {
 									mCurrentX = 0;
+									if (mConfig.AutoPositionAfterZoom
+											&& mMaxY > mMinY) {
+										final float tempNominal = (mMaxY - mMinY) / 2;
+										mCurrentY = mCurrentY
+												- mAutoPositionNominalValue
+												+ tempNominal;
+										mAutoPositionNominalValue = tempNominal;
+									}
 								}
 							}
 						}
@@ -146,7 +166,7 @@ public class WaveformPlotThread extends Thread {
 			float scaledY = 0;
 			scaledY = mViewHeight - (element & mConfig.DataMaxValue) * scale;
 			if (mConfig.ZoomRatio != 1) {
-				float center = mAxialXCoord.y;
+				float center = mAutoPositionNominalValue;
 				scaledY = scaledY > center ? (scaledY - center)
 						* mConfig.ZoomRatio + center : center
 						- (center - scaledY) * mConfig.ZoomRatio;
@@ -186,7 +206,7 @@ public class WaveformPlotThread extends Thread {
 				|| mConfig.DefaultDataBufferSize != config.DefaultDataBufferSize)
 			mDataQueue = new ArrayBlockingQueue<int[]>(
 					config.DefaultDataBufferSize);
-		mConfig = config;
+			mConfig = config;
 	}
 
 	private void updateScaling(int height, int dataMax, int dataMin)
@@ -238,7 +258,7 @@ public class WaveformPlotThread extends Thread {
 				Log.i(TAG, "setConfig async");
 			}
 			Message.obtain(mHandler, MESSAGE_SET_CONFIG, 0, 0, config)
-			.sendToTarget();
+					.sendToTarget();
 		} else {
 			updateConfig(config);
 		}
