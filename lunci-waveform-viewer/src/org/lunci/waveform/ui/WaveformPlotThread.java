@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.lunci.ui;
+package org.lunci.waveform.ui;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
