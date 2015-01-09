@@ -16,14 +16,19 @@
 
 package org.lunci.ui;
 
+import java.util.concurrent.BlockingQueue;
+
+import org.lunci.waveform_viewer.BuildConfig;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 public class WaveformView extends SurfaceView implements SurfaceHolder.Callback {
-
+	private static final String TAG = WaveformView.class.getSimpleName();
 	private WaveformPlotThread mPlotThread;
 	private Config mConfig = new Config();
 
@@ -35,11 +40,17 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) throws NullPointerException {
+		if (BuildConfig.DEBUG) {
+			Log.i(TAG, "surfaceChanged");
+		}
 		mPlotThread.setWidthHeight(width, height);
 	}
 
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
+		if (BuildConfig.DEBUG) {
+			Log.i(TAG, "surfaceCreated");
+		}
 		mPlotThread = new WaveformPlotThread(getHolder(), this);
 		mPlotThread.setWidthHeight(this.getWidth(), this.getHeight());
 		mPlotThread.start();
@@ -85,8 +96,14 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		return mConfig.BackgroundColor;
 	}
 
-	public void putData(Integer[] dataValue) {
-		mPlotThread.getDataQueue().offer(dataValue);
+	public void putData(int[] dataValue) {
+		if (mPlotThread != null && mPlotThread.isAlive()) {
+			try {
+				mPlotThread.getDataQueue().put(dataValue);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public int getmDataMax() {
@@ -115,6 +132,13 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		return mConfig;
 	}
 
+	public void setZoomRatio(float ratio) {
+		mConfig.ZoomRatio = ratio;
+		if (mPlotThread != null) {
+			mPlotThread.setConfig(mConfig);
+		}
+	}
+
 	public static class Config {
 		public int DataMaxValue = Integer.MAX_VALUE;
 		public int DataMinValue = Integer.MIN_VALUE;
@@ -123,5 +147,12 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		public int AxisColor = 0xFFFFFFFF;
 		public int PlotThreadPriority = Thread.NORM_PRIORITY;
 		public float ZoomRatio = 1;
+		public int DefaultDataBufferSize = 1000;
+		public boolean EnableAutoCenterY = true;
+	}
+
+	public synchronized void setDataQueue(BlockingQueue<int[]> dataQueue) {
+		if (mPlotThread != null)
+			mPlotThread.setDataQueue(dataQueue);
 	}
 }
