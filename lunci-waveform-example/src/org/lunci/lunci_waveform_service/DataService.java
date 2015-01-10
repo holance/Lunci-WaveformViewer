@@ -4,6 +4,8 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import org.lunci.lunci_waveform_data.AsyncMessage;
+import org.lunci.lunci_waveform_data.GlobalEventIds;
 import org.lunci.lunci_waveform_data.GraphDataSet;
 import org.lunci.lunci_waveform_example.BuildConfig;
 import org.lunci.waveform.sim.IWaveformGenerator;
@@ -21,6 +23,7 @@ import android.os.Messenger;
 import android.os.Process;
 import android.util.Log;
 import android.util.SparseArray;
+import de.greenrobot.event.EventBus;
 
 /**
  * @author z0034hwj
@@ -178,10 +181,16 @@ public class DataService extends Service {
 
 	private final class DataSendingThread extends Thread {
 		private boolean stop = false;
-		private static final int FPS = 100;
+		private static final int FPS = 50;
 		private static final int DATA_SIZE = 20;
+		private static final int DATA_COUNTER_LIMIT = 200;
 		private final IWaveformGenerator mDataGen = new SineWaveGenerator(1000,
-				1, FPS, 5000);
+				1, FPS * DATA_SIZE, 5000);
+		private int mDataCounter = 0;
+		private long mDataCounterStartTime;
+		private long mDataCounterEndTime;
+		private int mDataPerSec = 0;
+		private final EventBus mEventBus = EventBus.getDefault();
 
 		public DataSendingThread() {
 			super();
@@ -191,6 +200,9 @@ public class DataService extends Service {
 		@Override
 		public void run() {
 			while (!stop) {
+				if (mDataCounter == 0) {
+					mDataCounterStartTime = System.currentTimeMillis();
+				}
 				final int[] data = new int[DATA_SIZE];
 				synchronized (mClients) {
 					for (int i = 0; i < data.length; ++i) {
@@ -209,8 +221,22 @@ public class DataService extends Service {
 						}
 					}
 				}
+				++mDataCounter;
+				if (mDataCounter >= DATA_COUNTER_LIMIT) {
+					mDataCounterEndTime = System.currentTimeMillis();
+					Log.i(TAG, "time diff="
+							+ (mDataCounterEndTime - mDataCounterStartTime));
+					final int packedPerSec = (int) (DATA_COUNTER_LIMIT / ((mDataCounterEndTime - mDataCounterStartTime) / 1000));
+					if (mDataPerSec != packedPerSec) {
+						mDataPerSec = packedPerSec;
+						mEventBus.post(new AsyncMessage(Message.obtain(null,
+								GlobalEventIds.MESSAGE_PACKET_PERFORMANCE,
+								packedPerSec, -1)));
+					}
+					mDataCounter = 0;
+				}
 				try {
-					Thread.sleep(20);
+					Thread.sleep(1000 / FPS);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

@@ -21,12 +21,19 @@ public class SineWaveGenerator implements IWaveformGenerator {
 
 	@Override
 	public double get() {
-		final double y = (amplitude * Math.sin(Math.toRadians(sineCounter)))
+		final double y = (amplitude * Math.sin(sineCounter * (2 * Math.PI)
+				* frequency / samplingRate))
 				+ nominal;
 		++sineCounter;
-		if (sineCounter >= 360) {
+		if (sineCounter >= samplingRate / frequency) {
 			sineCounter = 0;
 		}
+		// final double y = (amplitude * Math.sin(Math.toRadians(sineCounter)))
+		// + nominal;
+		// ++sineCounter;
+		// if (sineCounter >= 360) {
+		// sineCounter = 0;
+		// }
 		return y;
 	}
 

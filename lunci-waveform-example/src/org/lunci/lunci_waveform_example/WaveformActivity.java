@@ -2,6 +2,7 @@ package org.lunci.lunci_waveform_example;
 
 import java.lang.ref.WeakReference;
 
+import org.lunci.lunci_waveform_data.AsyncMessage;
 import org.lunci.lunci_waveform_data.GlobalEventIds;
 import org.lunci.lunci_waveform_fragments.WaveformFragment;
 import org.lunci.lunci_waveform_service.DataServiceCommands;
@@ -11,7 +12,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
@@ -69,14 +69,11 @@ public class WaveformActivity extends ActivityServiceManagerBase {
 	}
 
 	public void onEventMainThread(Message msg) {
-		if (BuildConfig.DEBUG) {
-			Log.i(TAG, "onReceived Message from EventBus, id=" + msg.what);
-		}
 		mHandler.dispatchMessage(msg);
 	}
 
-	public void onEventAsync(Message msg) {
-		mEventBus.post(msg);
+	public void onEventAsync(AsyncMessage msg) {
+		mEventBus.post(msg.getMsg());
 	}
 
 	@Override

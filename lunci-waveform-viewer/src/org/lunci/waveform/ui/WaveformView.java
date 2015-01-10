@@ -139,6 +139,13 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		}
 	}
 
+	public void setDrawingDeltaX(int delta) {
+		mConfig.DrawingDeltaX = delta;
+		if (mPlotThread != null) {
+			mPlotThread.setConfig(mConfig);
+		}
+	}
+
 	public static class Config {
 		public int DataMaxValue = Integer.MAX_VALUE;
 		public int DataMinValue = Integer.MIN_VALUE;

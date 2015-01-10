@@ -64,6 +64,7 @@ public class WaveformFragment extends Fragment_ServiceManagerBase {
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
 				mWaveformView.setZoomRatio(mWaveformView.getConfig().ZoomRatio * 2);
+				mWaveformView.setDrawingDeltaX(mWaveformView.getConfig().DrawingDeltaX * 2);
 			}
 
 		});
@@ -72,6 +73,7 @@ public class WaveformFragment extends Fragment_ServiceManagerBase {
 			@Override
 			public void onClick(View v) {
 				mWaveformView.setZoomRatio(mWaveformView.getConfig().ZoomRatio / 2);
+				mWaveformView.setDrawingDeltaX(mWaveformView.getConfig().DrawingDeltaX / 2);
 			}
 
 		});
