@@ -9,6 +9,7 @@ import org.lunci.lunci_waveform_data.GlobalEventIds;
 import org.lunci.lunci_waveform_data.GraphDataSet;
 import org.lunci.lunci_waveform_example.BuildConfig;
 import org.lunci.waveform.sim.IWaveformGenerator;
+import org.lunci.waveform.sim.RectWaveGenerator;
 import org.lunci.waveform.sim.SineWaveGenerator;
 
 import android.app.Service;
@@ -40,7 +41,7 @@ public class DataService extends Service {
 	}
 
 	protected final class DataServiceBinder extends Binder implements
-	IDataService {
+			IDataService {
 
 		public DataServiceBinder() {
 			super();
@@ -184,8 +185,9 @@ public class DataService extends Service {
 		private static final int FPS = 50;
 		private static final int DATA_SIZE = 20;
 		private static final int DATA_COUNTER_LIMIT = 200;
-		private final IWaveformGenerator mDataGen = new SineWaveGenerator(1000,
-				1, FPS * DATA_SIZE, 5000);
+		private final IWaveformGenerator[] mDataGenSet = new IWaveformGenerator[] {
+				new SineWaveGenerator(1000, 10, FPS * DATA_SIZE, 5000),
+				new RectWaveGenerator(1500, 2, FPS * DATA_SIZE, 5000) };
 		private int mDataCounter = 0;
 		private long mDataCounterStartTime;
 		private long mDataCounterEndTime;
@@ -203,17 +205,20 @@ public class DataService extends Service {
 				if (mDataCounter == 0) {
 					mDataCounterStartTime = System.currentTimeMillis();
 				}
-				final int[] data = new int[DATA_SIZE];
+				final int[][] data = new int[mDataGenSet.length][DATA_SIZE];
 				synchronized (mClients) {
 					for (int i = 0; i < data.length; ++i) {
-						final double value = mDataGen.get();
-						data[i] = (int) Math.round(value);
+						for (int j = 0; j < data[i].length; ++j) {
+							final double value = mDataGenSet[i].get();
+							data[i][j] = (int) Math.round(value);
+						}
 					}
 					for (int i = 0; i < mClients.size(); ++i) {
 						final GraphDataClient client = mClients.get(mClients
 								.keyAt(i));
 						if (client.getQueue().get() != null) {
-							if (!client.getQueue().get().offer(data)) {
+							if (!client.getQueue().get()
+									.offer(data[client.getDataSourceIndex()])) {
 								Log.w(TAG, "push data to client buffer failed");
 							}
 						} else {
@@ -224,8 +229,6 @@ public class DataService extends Service {
 				++mDataCounter;
 				if (mDataCounter >= DATA_COUNTER_LIMIT) {
 					mDataCounterEndTime = System.currentTimeMillis();
-					Log.i(TAG, "time diff="
-							+ (mDataCounterEndTime - mDataCounterStartTime));
 					final int packedPerSec = (int) (DATA_COUNTER_LIMIT / ((mDataCounterEndTime - mDataCounterStartTime) / 1000));
 					if (mDataPerSec != packedPerSec) {
 						mDataPerSec = packedPerSec;

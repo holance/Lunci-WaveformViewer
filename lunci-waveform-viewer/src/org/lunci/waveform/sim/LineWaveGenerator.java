@@ -1,6 +1,6 @@
 package org.lunci.waveform.sim;
 
-public class LineWaveGenerator implements IWaveformGenerator {
+public final class LineWaveGenerator implements IWaveformGenerator {
 	private int amplitude = 1;
 
 	public int getAmplitude() {
