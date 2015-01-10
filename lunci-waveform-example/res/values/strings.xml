@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">lunci-waveform-example</string>
+
+    <string name="app_name">HiSiBWaveformViewer</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+	<string name="data_service_name">HiSib Data Service</string>
+	<string name="zoom_in">Zoom In</string>
+	<string name="zoom_out">Zoom Out</string>
+	<string name="packet_per_sec">Packet/s: </string>
 </resources>
