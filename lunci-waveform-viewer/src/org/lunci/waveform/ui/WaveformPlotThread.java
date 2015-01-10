@@ -71,7 +71,7 @@ public class WaveformPlotThread extends Thread {
 	public void setWidthHeight(int width, int height) {
 		if (this.isAlive()) {
 			Message.obtain(mHandler, MESSAGE_SET_WIDTH_HEIGHT, width, height)
-					.sendToTarget();
+			.sendToTarget();
 		} else {
 			updateWidthHeightSafe(width, height);
 		}
@@ -174,12 +174,15 @@ public class WaveformPlotThread extends Thread {
 		final float scale = mScaling;
 		mPathSeg.rewind();
 		mPathSeg.setLastPoint(lastX, lastY);
-		mPathSeg.moveTo(lastX, lastY);
+		// mPathSeg.moveTo(lastX, lastY);
 		float tempX = lastX;
 		for (int element : newY) {
 			tempX += delta;
-			float scaledY = mViewHeight - (element & mConfig.DataMaxValue)
-					* scale;
+			if (element > mConfig.DataMaxValue
+					|| element < mConfig.DataMinValue) {
+				continue;
+			}
+			float scaledY = mViewHeight - element * scale;
 			if (mConfig.ZoomRatio != 1) {
 				float center = 0;
 				if (mConfig.AutoPositionAfterZoom) {
@@ -283,7 +286,7 @@ public class WaveformPlotThread extends Thread {
 				Log.i(TAG, "setConfig async");
 			}
 			Message.obtain(mHandler, MESSAGE_SET_CONFIG, 0, 0, config)
-			.sendToTarget();
+					.sendToTarget();
 		} else {
 			updateConfig(config);
 		}

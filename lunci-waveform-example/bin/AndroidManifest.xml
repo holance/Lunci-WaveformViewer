@@ -13,10 +13,10 @@
         android:theme="@style/AppTheme" >
         <service android:enabled="true" android:exported="false"
             android:label="@string/data_service_name"
-            android:name="com.siemens.healthcare.service.DataService"/>
+            android:name="org.lunci.lunci_waveform_service.DataService"/>
         <activity
             android:name=".WaveformActivity"
-            android:label="@string/app_name" android:hardwareAccelerated="true">
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

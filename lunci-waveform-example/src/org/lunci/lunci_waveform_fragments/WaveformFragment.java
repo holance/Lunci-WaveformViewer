@@ -1,5 +1,6 @@
 package org.lunci.lunci_waveform_fragments;
 
+import org.lunci.lunci_waveform_example.BuildConfig;
 import org.lunci.lunci_waveform_example.R;
 import org.lunci.waveform.ui.WaveformView;
 
@@ -26,6 +27,7 @@ public class WaveformFragment extends Fragment_ServiceManagerBase {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		Log.i(TAG, "onCreate");
 		if (savedInstanceState == null) {
 			final Bundle args = getArguments();
 			if (args != null) {
@@ -39,7 +41,6 @@ public class WaveformFragment extends Fragment_ServiceManagerBase {
 		}
 		final BufferAttacher attacher = new BufferAttacher();
 		attacher.start();
-		Log.i(TAG, "onCreate");
 	}
 
 	@Override
@@ -52,7 +53,8 @@ public class WaveformFragment extends Fragment_ServiceManagerBase {
 				.findViewById(R.id.waveformView_1);
 		final WaveformView.Config config = new WaveformView.Config();
 		config.DataMinValue = 0;
-		config.DataMaxValue = 0x00FFFFFF;
+		config.DataMaxValue = 10000;
+		config.DrawingDeltaX = 8;
 		mWaveformView.setConfig(config);
 		final ZoomControls zoomControls = (ZoomControls) rootView
 				.findViewById(R.id.zoomControls_vertical_zoom);
@@ -120,6 +122,9 @@ public class WaveformFragment extends Fragment_ServiceManagerBase {
 
 	@Override
 	public void onServiceConnected(ComponentName name, IBinder service) {
+		if (BuildConfig.DEBUG) {
+			Log.i(TAG, "onServiceConnected");
+		}
 		super.onServiceConnected(name, service);
 		mServiceReadyBlocker.open();
 	}
@@ -131,6 +136,9 @@ public class WaveformFragment extends Fragment_ServiceManagerBase {
 	private final class BufferAttacher extends Thread {
 		@Override
 		public void run() {
+			if (BuildConfig.DEBUG) {
+				Log.i(TAG, "BufferAttacher running");
+			}
 			mWaveformViewReadyBlocker.block();
 			mServiceReadyBlocker.block();
 			mClientId = getServiceFunction().getService().addGraphDataClient(
