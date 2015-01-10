@@ -1,6 +1,6 @@
 package org.lunci.waveform.sim;
 
-public class SineWaveGenerator implements IWaveformGenerator {
+public final class SineWaveGenerator implements IWaveformGenerator {
 	private int sineCounter = 0;
 	private int amplitude = 1;
 	private int frequency = 1;
