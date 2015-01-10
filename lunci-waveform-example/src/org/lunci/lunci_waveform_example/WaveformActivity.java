@@ -31,11 +31,11 @@ public class WaveformActivity extends ActivityServiceManagerBase {
 		final WaveformFragment fragment1 = new WaveformFragment();
 		fragment1.setDataIndex(0);
 		final WaveformFragment fragment2 = new WaveformFragment();
-		fragment2.setDataIndex(1);
+		fragment2.setDataIndex(0);
 		getSupportFragmentManager().beginTransaction()
-		.add(R.id.frameLayout_wave_1, fragment1).commit();
+				.add(R.id.frameLayout_wave_1, fragment1).commit();
 		getSupportFragmentManager().beginTransaction()
-		.add(R.id.frameLayout_wave_2, fragment2, "wave2").commit();
+				.add(R.id.frameLayout_wave_2, fragment2, "wave2").commit();
 		if (savedInstanceState == null) {
 
 		} else {

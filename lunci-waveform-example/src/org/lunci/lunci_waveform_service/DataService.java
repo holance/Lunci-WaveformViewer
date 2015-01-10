@@ -6,6 +6,8 @@ import java.util.concurrent.BlockingQueue;
 
 import org.lunci.lunci_waveform_data.GraphDataSet;
 import org.lunci.lunci_waveform_example.BuildConfig;
+import org.lunci.waveform.sim.IWaveformGenerator;
+import org.lunci.waveform.sim.SineWaveGenerator;
 
 import android.app.Service;
 import android.content.Intent;
@@ -19,7 +21,6 @@ import android.os.Messenger;
 import android.os.Process;
 import android.util.Log;
 import android.util.SparseArray;
-import de.greenrobot.event.EventBus;
 
 /**
  * @author z0034hwj
@@ -36,7 +37,7 @@ public class DataService extends Service {
 	}
 
 	protected final class DataServiceBinder extends Binder implements
-			IDataService {
+	IDataService {
 
 		public DataServiceBinder() {
 			super();
@@ -135,7 +136,7 @@ public class DataService extends Service {
 
 	private void startConnection() {
 		stopConnection();
-		mDataSendingThread = new DataSendingThread(mWaveformDataTransferBuffer);
+		mDataSendingThread = new DataSendingThread();
 		mDataSendingThread.start();
 	}
 
@@ -176,44 +177,45 @@ public class DataService extends Service {
 	}
 
 	private final class DataSendingThread extends Thread {
-		private final BlockingQueue<GraphDataSet> mDataTransferBuffer;
-		private final EventBus mEventBus = EventBus.getDefault();;
 		private boolean stop = false;
+		private static final int FPS = 100;
+		private static final int DATA_SIZE = 20;
+		private final IWaveformGenerator mDataGen = new SineWaveGenerator(1000,
+				1, FPS, 5000);
 
-		public DataSendingThread(BlockingQueue<GraphDataSet> dataTransferBuffer) {
+		public DataSendingThread() {
 			super();
-			mDataTransferBuffer = dataTransferBuffer;
 			this.setPriority(Thread.NORM_PRIORITY);
 		}
 
 		@Override
 		public void run() {
 			while (!stop) {
-				try {
-					// Log.i(TAG, "sending data");
-					final GraphDataSet set = mDataTransferBuffer.take();
-					synchronized (mClients) {
-						for (int i = 0; i < mClients.size(); ++i) {
-							final GraphDataClient client = mClients
-									.get(mClients.keyAt(i));
-							if (client.getQueue().get() != null) {
-								if (!client
-										.getQueue()
-										.get()
-										.offer(set.getDataSet()[client
-												.getDataSourceIndex()].dataValue)) {
-									Log.w(TAG,
-											"push data to client buffer failed");
-								}
-							} else {
-								mClients.remove(client.getId());
+				final int[] data = new int[DATA_SIZE];
+				synchronized (mClients) {
+					for (int i = 0; i < data.length; ++i) {
+						final double value = mDataGen.get();
+						data[i] = (int) Math.round(value);
+					}
+					for (int i = 0; i < mClients.size(); ++i) {
+						final GraphDataClient client = mClients.get(mClients
+								.keyAt(i));
+						if (client.getQueue().get() != null) {
+							if (!client.getQueue().get().offer(data)) {
+								Log.w(TAG, "push data to client buffer failed");
 							}
+						} else {
+							mClients.remove(client.getId());
 						}
 					}
-					// mEventBus.post(set);
+				}
+				try {
+					Thread.sleep(20);
 				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				// mEventBus.post(set);
 			}
 		}
 
