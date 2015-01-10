@@ -23,6 +23,7 @@ import org.lunci.waveform_viewer.BuildConfig;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Handler;
@@ -43,7 +44,7 @@ public class WaveformPlotThread extends Thread {
 	private float mAutoPositionNominalValue = 0;
 	private float mDeltaX = 4;// unit:pixel.
 	private float mCurrentX = 0;// unit:pixel.
-	private float mCurrentY = 0;// unit:pixel.
+	private float mCurrentY = Float.MAX_VALUE;// unit:pixel.
 	private float mMaxY, mMinY;
 	private BlockingQueue<int[]> mDataQueue;
 	private final Rect mClearRect = new Rect();
@@ -54,12 +55,16 @@ public class WaveformPlotThread extends Thread {
 	private WaveformView.Config mConfig = new WaveformView.Config();
 	private float mScaling = 1f;
 	private boolean mClearScreenFlag = false;
+	private final Path mPathSeg = new Path();
 
 	public WaveformPlotThread(SurfaceHolder surfaceHolder, WaveformView view) {
 		holder = surfaceHolder;
 		mLinePaint.setColor(view.getLineColor());
 		mAxisPaint.setColor(view.getAxisColor());
 		mBackgroundPaint.setColor(view.getBackgroundColor());
+		mLinePaint.setStyle(Paint.Style.STROKE);
+		mLinePaint.setAntiAlias(true);
+		mLinePaint.setStrokeWidth(1);
 		updateConfig(view.getConfig());
 	}
 
@@ -84,6 +89,12 @@ public class WaveformPlotThread extends Thread {
 		mMinY = Float.MAX_VALUE;
 	}
 
+	private void resetAutoPositionParams() {
+		mMaxY = Float.MIN_VALUE;
+		mMinY = Float.MAX_VALUE;
+		mAutoPositionNominalValue = mViewHeight / 2;
+	}
+
 	@Override
 	public void run() {
 		if (BuildConfig.DEBUG) {
@@ -93,52 +104,52 @@ public class WaveformPlotThread extends Thread {
 		while (!stop) {
 			c = null;
 			try {
-				int[] y;
-				try {
-					y = mDataQueue.take();
-					if (mClearScreenFlag) {
-						mCurrentX = 0;
-						mCurrentY = mAxialXCoord.y;
-						c = holder.lockCanvas(null);
-						synchronized (holder) {
-							c.drawColor(mConfig.BackgroundColor);
-						}
-						mClearScreenFlag = false;
-					} else {
-						mClearRect.left = (int) mCurrentX;
-						mClearRect.right = (int) (mCurrentX + mDeltaX
-								* mClearRectWidthMultiplier);
-						c = holder.lockCanvas(mClearRect);
-						synchronized (holder) {
-							if (c != null) {
-								c.drawRect(mClearRect, mBackgroundPaint);
-								mCurrentY = PlotPoints(c, mCurrentX, mDeltaX,
-										mCurrentY, y);
-								mCurrentX += mDeltaX;
-								if (mConfig.AutoPositionAfterZoom) {
-									if (mMaxY < mCurrentY) {
-										mMaxY = mCurrentY;
-									} else if (mMinY > mCurrentY) {
-										mMinY = mCurrentY;
+				if (mClearScreenFlag) {
+					mCurrentX = 0;
+					mCurrentY = Float.MAX_VALUE;
+					c = holder.lockCanvas(null);
+					synchronized (holder) {
+						c.drawColor(mConfig.BackgroundColor);
+					}
+					mClearScreenFlag = false;
+					resetAutoPositionParams();
+				} else {
+					int[] y = mDataQueue.take();
+					mClearRect.left = (int) mCurrentX;
+					mClearRect.right = (int) (mCurrentX + mDeltaX
+							* mClearRectWidthMultiplier);
+					c = holder.lockCanvas(mClearRect);
+					synchronized (holder) {
+						if (c != null) {
+							c.drawRect(mClearRect, mBackgroundPaint);
+							mCurrentY = PlotPoints(c, mCurrentX, mDeltaX,
+									mCurrentY, y);
+							mCurrentX += mDeltaX;
+
+							if (mCurrentX >= mViewWidth) {
+								mCurrentX = 0;
+								mCurrentY = Float.MAX_VALUE;
+								if (mConfig.AutoPositionAfterZoom
+										&& mMaxY > mMinY) {
+									final float tempNominal = (mMaxY - mMinY) / 2;
+									mAutoPositionNominalValue = mMaxY
+											- tempNominal;
+									if (BuildConfig.DEBUG) {
+										Log.i(TAG, "autoPositionNominalValue="
+												+ mAutoPositionNominalValue
+												+ "; tempNominal="
+												+ tempNominal + "; maxY="
+												+ mMaxY + "; minY=" + mMinY);
 									}
-								}
-								if (mCurrentX >= mViewWidth) {
-									mCurrentX = 0;
-									if (mConfig.AutoPositionAfterZoom
-											&& mMaxY > mMinY) {
-										final float tempNominal = (mMaxY - mMinY) / 2;
-										mCurrentY = mCurrentY
-												- mAutoPositionNominalValue
-												+ tempNominal;
-										mAutoPositionNominalValue = tempNominal;
-									}
+									mMaxY = Float.MIN_VALUE;
+									mMinY = Float.MAX_VALUE;
 								}
 							}
 						}
 					}
-				} catch (InterruptedException e) {
-					e.printStackTrace();
 				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			} finally {
 				if (c != null) {
 					holder.unlockCanvasAndPost(c);
@@ -161,20 +172,35 @@ public class WaveformPlotThread extends Thread {
 			float lastY, int[] newY) {
 		final float delta = deltaX / newY.length;
 		final float scale = mScaling;
+		mPathSeg.rewind();
+		mPathSeg.setLastPoint(lastX, lastY);
+		mPathSeg.moveTo(lastX, lastY);
+		float tempX = lastX;
 		for (int element : newY) {
-			final float tempX = lastX + delta;
-			float scaledY = 0;
-			scaledY = mViewHeight - (element & mConfig.DataMaxValue) * scale;
+			tempX += delta;
+			float scaledY = mViewHeight - (element & mConfig.DataMaxValue)
+					* scale;
 			if (mConfig.ZoomRatio != 1) {
-				float center = mAutoPositionNominalValue;
+				float center = 0;
+				if (mConfig.AutoPositionAfterZoom) {
+					center = mAutoPositionNominalValue;
+					if (mMaxY < scaledY) {
+						mMaxY = scaledY;
+					} else if (mMinY > scaledY) {
+						mMinY = scaledY;
+					}
+				} else
+					center = mViewHeight / 2;
 				scaledY = scaledY > center ? (scaledY - center)
 						* mConfig.ZoomRatio + center : center
 						- (center - scaledY) * mConfig.ZoomRatio;
 			}
-			canvas.drawLine(lastX, lastY, tempX, scaledY, mLinePaint);
+			// Log.i(TAG, "orgY=" + element + "; scaledY=" + scaledY);
+			mPathSeg.lineTo(tempX, scaledY);
 			lastY = scaledY;
 			lastX = tempX;
 		}
+		canvas.drawPath(mPathSeg, mLinePaint);
 		return lastY;
 	}
 
@@ -203,10 +229,12 @@ public class WaveformPlotThread extends Thread {
 		this.setPriority(config.PlotThreadPriority);
 		if (mDataQueue == null
 				|| mConfig == null
-				|| mConfig.DefaultDataBufferSize != config.DefaultDataBufferSize)
+				|| mConfig.DefaultDataBufferSize != config.DefaultDataBufferSize) {
 			mDataQueue = new ArrayBlockingQueue<int[]>(
 					config.DefaultDataBufferSize);
+		}
 		mConfig = config;
+		mDeltaX = mConfig.DrawingDeltaX;
 	}
 
 	private void updateScaling(int height, int dataMax, int dataMin) {
