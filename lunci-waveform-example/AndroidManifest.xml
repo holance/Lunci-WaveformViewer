@@ -11,11 +11,15 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
+        <service android:enabled="true" android:exported="false"
+            android:label="@string/data_service_name"
+            android:name="com.siemens.healthcare.service.DataService"/>
         <activity
-            android:name=".MainActivity"
-            android:label="@string/app_name" >
+            android:name=".WaveformActivity"
+            android:label="@string/app_name" android:hardwareAccelerated="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
