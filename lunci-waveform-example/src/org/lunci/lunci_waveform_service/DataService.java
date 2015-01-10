@@ -1,12 +1,26 @@
+/*
+ * Copyright (C) 2014 Lunci Hua
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.lunci.lunci_waveform_service;
 
 import java.lang.ref.WeakReference;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 import org.lunci.lunci_waveform_data.AsyncMessage;
 import org.lunci.lunci_waveform_data.GlobalEventIds;
-import org.lunci.lunci_waveform_data.GraphDataSet;
 import org.lunci.lunci_waveform_example.BuildConfig;
 import org.lunci.waveform.sim.IWaveformGenerator;
 import org.lunci.waveform.sim.RectWaveGenerator;
@@ -92,7 +106,6 @@ public class DataService extends Service {
 	private Handler mHandler;
 	private DataSendingThread mDataSendingThread;
 	private DataServiceConfig mConfig = new DataServiceConfig();
-	private BlockingQueue<GraphDataSet> mWaveformDataTransferBuffer;
 	private final SparseArray<GraphDataClient> mClients = new SparseArray<GraphDataClient>();
 
 	@Override
@@ -140,7 +153,7 @@ public class DataService extends Service {
 
 	private void startConnection() {
 		stopConnection();
-		mDataSendingThread = new DataSendingThread();
+		mDataSendingThread = new DataSendingThread(mConfig);
 		mDataSendingThread.start();
 	}
 
@@ -152,12 +165,6 @@ public class DataService extends Service {
 
 	private void setConfig(DataServiceConfig config) {
 		mConfig = config;
-		mWaveformDataTransferBuffer = new ArrayBlockingQueue<GraphDataSet>(
-				config.GraphDataTransferBufferSize);
-	}
-
-	public BlockingQueue<GraphDataSet> getGraphDataBuffer() {
-		return mWaveformDataTransferBuffer;
 	}
 
 	public int addGraphDataClient(BlockingQueue<int[]> queue, int sourceIndex) {
@@ -182,21 +189,23 @@ public class DataService extends Service {
 
 	private final class DataSendingThread extends Thread {
 		private boolean stop = false;
-		private static final int FPS = 50;
-		private static final int DATA_SIZE = 20;
-		private static final int DATA_COUNTER_LIMIT = 200;
-		private final IWaveformGenerator[] mDataGenSet = new IWaveformGenerator[] {
-				new SineWaveGenerator(1000, 10, FPS * DATA_SIZE, 5000),
-				new RectWaveGenerator(1500, 2, FPS * DATA_SIZE, 5000) };
+		private final DataServiceConfig mConfig;
+		private final IWaveformGenerator[] mDataGenSet;
 		private int mDataCounter = 0;
 		private long mDataCounterStartTime;
 		private long mDataCounterEndTime;
 		private int mDataPerSec = 0;
 		private final EventBus mEventBus = EventBus.getDefault();
 
-		public DataSendingThread() {
+		public DataSendingThread(DataServiceConfig config) {
 			super();
 			this.setPriority(Thread.NORM_PRIORITY);
+			mConfig = config;
+			mDataGenSet = new IWaveformGenerator[] {
+					new SineWaveGenerator(1000, 10, mConfig.FPS
+							* mConfig.DATA_SIZE, 5000),
+							new RectWaveGenerator(1500, 2, mConfig.FPS
+									* mConfig.DATA_SIZE, 5000) };
 		}
 
 		@Override
@@ -205,7 +214,7 @@ public class DataService extends Service {
 				if (mDataCounter == 0) {
 					mDataCounterStartTime = System.currentTimeMillis();
 				}
-				final int[][] data = new int[mDataGenSet.length][DATA_SIZE];
+				final int[][] data = new int[mDataGenSet.length][mConfig.DATA_SIZE];
 				synchronized (mClients) {
 					for (int i = 0; i < data.length; ++i) {
 						for (int j = 0; j < data[i].length; ++j) {
@@ -227,9 +236,9 @@ public class DataService extends Service {
 					}
 				}
 				++mDataCounter;
-				if (mDataCounter >= DATA_COUNTER_LIMIT) {
+				if (mDataCounter >= mConfig.DATA_COUNTER_LIMIT) {
 					mDataCounterEndTime = System.currentTimeMillis();
-					final int packedPerSec = (int) (DATA_COUNTER_LIMIT / ((mDataCounterEndTime - mDataCounterStartTime) / 1000));
+					final int packedPerSec = (int) (mConfig.DATA_COUNTER_LIMIT / ((mDataCounterEndTime - mDataCounterStartTime) / 1000));
 					if (mDataPerSec != packedPerSec) {
 						mDataPerSec = packedPerSec;
 						mEventBus.post(new AsyncMessage(Message.obtain(null,
@@ -239,7 +248,7 @@ public class DataService extends Service {
 					mDataCounter = 0;
 				}
 				try {
-					Thread.sleep(1000 / FPS);
+					Thread.sleep(1000 / mConfig.FPS);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
