@@ -19,6 +19,7 @@ package org.lunci.lunci_waveform_fragments;
 import org.lunci.lunci_waveform_example.BuildConfig;
 import org.lunci.lunci_waveform_example.R;
 import org.lunci.waveform.ui.WaveformView;
+import org.lunci.waveform.ui.WaveformViewConfig;
 
 import android.content.ComponentName;
 import android.os.Bundle;
@@ -67,7 +68,7 @@ public class WaveformFragment extends Fragment_ServiceManagerBase {
 				container, false);
 		mWaveformView = (WaveformView) rootView
 				.findViewById(R.id.waveformView_1);
-		final WaveformView.Config config = new WaveformView.Config();
+		final WaveformViewConfig config = new WaveformViewConfig();
 		config.DataMinValue = 0;
 		config.DataMaxValue = 10000;
 		config.DrawingDeltaX = 8;
@@ -79,8 +80,8 @@ public class WaveformFragment extends Fragment_ServiceManagerBase {
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				mWaveformView.setZoomRatio(mWaveformView.getConfig().ZoomRatio * 2);
-				mWaveformView.setDrawingDeltaX(mWaveformView.getConfig().DrawingDeltaX * 2);
+				mWaveformView.setVerticalZoomRatio(mWaveformView.getConfig().VerticalZoom * 2);
+				mWaveformView.setHorizontalZoomRatio(mWaveformView.getConfig().HorizontalZoom * 2);
 			}
 
 		});
@@ -88,8 +89,8 @@ public class WaveformFragment extends Fragment_ServiceManagerBase {
 
 			@Override
 			public void onClick(View v) {
-				mWaveformView.setZoomRatio(mWaveformView.getConfig().ZoomRatio / 2);
-				mWaveformView.setDrawingDeltaX(mWaveformView.getConfig().DrawingDeltaX / 2);
+				mWaveformView.setVerticalZoomRatio(mWaveformView.getConfig().VerticalZoom / 2);
+				mWaveformView.setHorizontalZoomRatio(mWaveformView.getConfig().HorizontalZoom / 2);
 			}
 
 		});
