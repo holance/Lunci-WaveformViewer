@@ -13,4 +13,5 @@ public class WaveformViewConfig {
 	public int DefaultDataBufferSize = 1000;
 	public int DrawingDeltaX = 8;
 	public boolean ShowFPS = true;
+	public int LeadingClearWidth = 16;
 }

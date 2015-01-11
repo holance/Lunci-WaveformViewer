@@ -50,7 +50,6 @@ public class WaveformPlotThread extends Thread {
 	private float mMaxY, mMinY;
 	private BlockingQueue<int[]> mDataQueue;
 	private final Rect mClearRect = new Rect();
-	private float mClearRectWidthMultiplier = 4;
 	private final Paint mLinePaint = new Paint();
 	private final Paint mAxisPaint = new Paint();
 	private final Paint mBackgroundPaint = new Paint();
@@ -162,8 +161,7 @@ public class WaveformPlotThread extends Thread {
 						startTime = System.currentTimeMillis();
 					}
 					mClearRect.left = (int) mCurrentX;
-					mClearRect.right = (int) (mCurrentX + deltaX
-							* mClearRectWidthMultiplier);
+					mClearRect.right = (int) (mCurrentX + deltaX + mConfig.LeadingClearWidth);
 					c = holder.lockCanvas(mClearRect);
 					if (c != null) {
 						synchronized (holder) {
@@ -222,10 +220,6 @@ public class WaveformPlotThread extends Thread {
 	public void interrupt() {
 		stop = true;
 		super.interrupt();
-	}
-
-	public void setClearRectWidthMultiplier(float multiplier) {
-		mClearRectWidthMultiplier = multiplier;
 	}
 
 	// private float PlotPointsByPath(Canvas canvas, float lastX, float deltaX,
@@ -422,6 +416,7 @@ public class WaveformPlotThread extends Thread {
 			if (BuildConfig.DEBUG) {
 				Log.i(TAG, "setConfig async");
 			}
+			mHandler.removeMessages(MESSAGE_SET_CONFIG);
 			Message.obtain(mHandler, MESSAGE_SET_CONFIG, 0, 0, config)
 					.sendToTarget();
 		} else {
