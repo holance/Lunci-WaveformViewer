@@ -51,7 +51,7 @@ public class WaveformPlotThread extends Thread {
 	private BlockingQueue<int[]> mDataQueue;
 	private final Rect mClearRect = new Rect();
 	private final Paint mLinePaint = new Paint();
-	private final Paint mAxisPaint = new Paint();
+	private final Paint mAxialPaint = new Paint();
 	private final Paint mBackgroundPaint = new Paint();
 	private final Paint mFPSPaint = new Paint();
 	private WaveformViewConfig mConfig = new WaveformViewConfig();
@@ -71,9 +71,12 @@ public class WaveformPlotThread extends Thread {
 		super();
 		this.setPriority(Thread.NORM_PRIORITY);
 		holder = surfaceHolder;
-		mLinePaint.setColor(view.getLineColor());
-		mAxisPaint.setColor(view.getAxisColor());
+		mAxialPaint.setColor(view.getAxialColor());
+		mAxialPaint.setStyle(Paint.Style.STROKE);
+		mAxialPaint.setAntiAlias(true);
+		mAxialPaint.setStrokeWidth(1);
 		mBackgroundPaint.setColor(view.getBackgroundColor());
+		mLinePaint.setColor(view.getLineColor());
 		mLinePaint.setStyle(Paint.Style.STROKE);
 		mLinePaint.setAntiAlias(true);
 		mLinePaint.setStrokeWidth(1);
@@ -87,7 +90,7 @@ public class WaveformPlotThread extends Thread {
 	public void setWidthHeight(int width, int height) {
 		if (this.isAlive()) {
 			Message.obtain(mHandler, MESSAGE_SET_WIDTH_HEIGHT, width, height)
-			.sendToTarget();
+					.sendToTarget();
 		} else {
 			updateWidthHeightSafe(width, height);
 		}
@@ -142,12 +145,16 @@ public class WaveformPlotThread extends Thread {
 					}
 					mOnShowFPS = false;
 				} else if (mClearScreenFlag) {
-					mCurrentX = 0;
+					mCurrentX = mConfig.PaddingLeft;
 					mCurrentY = Float.MAX_VALUE;
 					c = holder.lockCanvas(null);
 					if (c != null) {
 						synchronized (holder) {
 							c.drawColor(mConfig.BackgroundColor);
+							if (mConfig.ShowAxialX) {
+								c.drawLine(mConfig.PaddingLeft, mAxialXCoord.y,
+										mViewWidth, mAxialXCoord.y, mAxialPaint);
+							}
 						}
 					}
 					mClearScreenFlag = false;
@@ -166,12 +173,16 @@ public class WaveformPlotThread extends Thread {
 					if (c != null) {
 						synchronized (holder) {
 							c.drawColor(mConfig.BackgroundColor);
-							// c.drawRect(mClearRect, mBackgroundPaint);
+							if (mConfig.ShowAxialX) {
+								c.drawLine(mClearRect.left, mAxialXCoord.y,
+										mClearRect.right, mAxialXCoord.y,
+										mAxialPaint);
+							}
 							mCurrentY = PlotPoints(c, mCurrentX, deltaX,
 									mCurrentY, y);
 							mCurrentX += deltaX;
 							if (mCurrentX >= mViewWidth) {
-								mCurrentX = 0;
+								mCurrentX = mConfig.PaddingLeft;
 								mCurrentY = Float.MAX_VALUE;
 								if (mConfig.AutoPositionAfterZoom
 										&& mMaxY > mMinY) {
@@ -369,6 +380,9 @@ public class WaveformPlotThread extends Thread {
 		}
 		mConfig = config;
 		mDeltaX = mConfig.DrawingDeltaX;
+		mAxialPaint.setColor(mConfig.AxialColor);
+		mBackgroundPaint.setColor(mConfig.BackgroundColor);
+		mLinePaint.setColor(mConfig.LineColor);
 	}
 
 	private void updateScaling(int height, int dataMax, int dataMin) {
@@ -418,7 +432,7 @@ public class WaveformPlotThread extends Thread {
 			}
 			mHandler.removeMessages(MESSAGE_SET_CONFIG);
 			Message.obtain(mHandler, MESSAGE_SET_CONFIG, 0, 0, config)
-					.sendToTarget();
+			.sendToTarget();
 		} else {
 			updateConfig(config);
 		}
