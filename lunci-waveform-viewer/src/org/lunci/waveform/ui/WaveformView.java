@@ -153,6 +153,13 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		}
 	}
 
+	public void setLeadingClearWidth(int width) {
+		mConfig.LeadingClearWidth = width;
+		if (mPlotThread != null) {
+			mPlotThread.setConfig(mConfig);
+		}
+	}
+
 	public synchronized BlockingQueue<int[]> getDataQueue() {
 		if (mPlotThread != null)
 			return mPlotThread.getDataQueue();
