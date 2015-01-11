@@ -44,30 +44,34 @@ public class WaveformActivity extends ActivityServiceManagerBase {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_waveform);
 		mTextView_PacketPerf = (TextView) findViewById(R.id.textView_packet_sec);
-		final WaveformFragment fragment1 = new WaveformFragment();
-		fragment1.setDataIndex(0);
-		final WaveformFragment fragment2 = new WaveformFragment();
-		fragment2.setDataIndex(1);
-		final WaveformFragment fragment3 = new WaveformFragment();
-		fragment3.setDataIndex(0);
-		final WaveformFragment fragment4 = new WaveformFragment();
-		fragment4.setDataIndex(1);
-		final WaveformFragment fragment5 = new WaveformFragment();
-		fragment5.setDataIndex(0);
-		final WaveformFragment fragment6 = new WaveformFragment();
-		fragment6.setDataIndex(1);
-		getSupportFragmentManager().beginTransaction()
-		.add(R.id.frameLayout_wave_1, fragment1).commit();
-		getSupportFragmentManager().beginTransaction()
-				.add(R.id.frameLayout_wave_2, fragment2).commit();
-		getSupportFragmentManager().beginTransaction()
-		.add(R.id.frameLayout_wave_3, fragment3).commit();
-		getSupportFragmentManager().beginTransaction()
-		.add(R.id.frameLayout_wave_4, fragment4).commit();
-		getSupportFragmentManager().beginTransaction()
-		.add(R.id.frameLayout_wave_5, fragment5).commit();
-		getSupportFragmentManager().beginTransaction()
-		.add(R.id.frameLayout_wave_6, fragment6).commit();
+		if (savedInstanceState == null) {
+			final WaveformFragment fragment1 = new WaveformFragment();
+			fragment1.setDataIndex(0);
+			final WaveformFragment fragment2 = new WaveformFragment();
+			fragment2.setDataIndex(1);
+			final WaveformFragment fragment3 = new WaveformFragment();
+			fragment3.setDataIndex(0);
+			final WaveformFragment fragment4 = new WaveformFragment();
+			fragment4.setDataIndex(1);
+			final WaveformFragment fragment5 = new WaveformFragment();
+			fragment5.setDataIndex(0);
+			final WaveformFragment fragment6 = new WaveformFragment();
+			fragment6.setDataIndex(1);
+			getSupportFragmentManager().beginTransaction()
+			.add(R.id.frameLayout_wave_1, fragment1).commit();
+			getSupportFragmentManager().beginTransaction()
+			.add(R.id.frameLayout_wave_2, fragment2).commit();
+			getSupportFragmentManager().beginTransaction()
+			.add(R.id.frameLayout_wave_3, fragment3).commit();
+			getSupportFragmentManager().beginTransaction()
+			.add(R.id.frameLayout_wave_4, fragment4).commit();
+			getSupportFragmentManager().beginTransaction()
+			.add(R.id.frameLayout_wave_5, fragment5).commit();
+			getSupportFragmentManager().beginTransaction()
+			.add(R.id.frameLayout_wave_6, fragment6).commit();
+		} else {
+
+		}
 		if (savedInstanceState == null) {
 
 		} else {
@@ -115,13 +119,6 @@ public class WaveformActivity extends ActivityServiceManagerBase {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
-		int id = item.getItemId();
-		if (id == R.id.action_settings) {
-			return true;
-		}
 		return super.onOptionsItemSelected(item);
 	}
 
