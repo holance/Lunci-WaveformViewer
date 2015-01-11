@@ -22,10 +22,12 @@ import java.util.concurrent.BlockingQueue;
 import org.lunci.waveform_viewer.BuildConfig;
 
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
+import android.graphics.Paint.Style;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -52,12 +54,23 @@ public class WaveformPlotThread extends Thread {
 	private final Paint mLinePaint = new Paint();
 	private final Paint mAxisPaint = new Paint();
 	private final Paint mBackgroundPaint = new Paint();
+	private final Paint mFPSPaint = new Paint();
 	private WaveformView.Config mConfig = new WaveformView.Config();
 	private float mScaling = 1f;
 	private boolean mClearScreenFlag = false;
-	private final Path mPathSeg = new Path();
+	// private final Path mPathSeg = new Path();
+	private final Rect mTextClearRect = new Rect();
+	private int mFPS = -1;
+	private int mPerfCounter = 0;
+	private long mPerfDrawingDelaySum = 0;
+	private boolean mOnShowFPS = false;
+	private final Rect mFPSBounds = new Rect();
+
+	// private float[] mDrawingPoints;
 
 	public WaveformPlotThread(SurfaceHolder surfaceHolder, WaveformView view) {
+		super();
+		this.setPriority(Thread.NORM_PRIORITY);
 		holder = surfaceHolder;
 		mLinePaint.setColor(view.getLineColor());
 		mAxisPaint.setColor(view.getAxisColor());
@@ -65,13 +78,17 @@ public class WaveformPlotThread extends Thread {
 		mLinePaint.setStyle(Paint.Style.STROKE);
 		mLinePaint.setAntiAlias(true);
 		mLinePaint.setStrokeWidth(1);
+		mFPSPaint.setTextSize(20);
+		mFPSPaint.setColor(Color.YELLOW);
+		mFPSPaint.setTypeface(Typeface.MONOSPACE);
+		mFPSPaint.setStyle(Style.FILL);
 		updateConfig(view.getConfig());
 	}
 
 	public void setWidthHeight(int width, int height) {
 		if (this.isAlive()) {
 			Message.obtain(mHandler, MESSAGE_SET_WIDTH_HEIGHT, width, height)
-			.sendToTarget();
+					.sendToTarget();
 		} else {
 			updateWidthHeightSafe(width, height);
 		}
@@ -101,31 +118,56 @@ public class WaveformPlotThread extends Thread {
 			Log.i(TAG, "Plot Thread is running");
 		}
 		Canvas c;
+		long startTime = 0;
+		long endTime = 0;
 		while (!stop) {
 			c = null;
 			try {
-				if (mClearScreenFlag) {
+				if (mOnShowFPS) {
+					final String fpsText = String.valueOf(mFPS);
+					mFPSPaint.getTextBounds(fpsText, 0, fpsText.length(),
+							mFPSBounds);
+					mTextClearRect.left = 10;
+					mTextClearRect.right = mFPSBounds.width() + 20;
+					mTextClearRect.top = 10;
+					mTextClearRect.bottom = mFPSBounds.height() + 10;
+					c = holder.lockCanvas(mTextClearRect);
+					if (c != null) {
+						synchronized (holder) {
+							c.drawColor(mConfig.BackgroundColor);
+							c.drawText(String.valueOf(mFPS),
+									mTextClearRect.left, mTextClearRect.bottom,
+									mFPSPaint);
+						}
+					}
+					mOnShowFPS = false;
+				} else if (mClearScreenFlag) {
 					mCurrentX = 0;
 					mCurrentY = Float.MAX_VALUE;
 					c = holder.lockCanvas(null);
-					synchronized (holder) {
-						c.drawColor(mConfig.BackgroundColor);
+					if (c != null) {
+						synchronized (holder) {
+							c.drawColor(mConfig.BackgroundColor);
+						}
 					}
 					mClearScreenFlag = false;
 					resetAutoPositionParams();
 				} else {
 					int[] y = mDataQueue.take();
+					if (mConfig.ShowFPS) {
+						startTime = System.currentTimeMillis();
+					}
 					mClearRect.left = (int) mCurrentX;
 					mClearRect.right = (int) (mCurrentX + mDeltaX
 							* mClearRectWidthMultiplier);
 					c = holder.lockCanvas(mClearRect);
-					synchronized (holder) {
-						if (c != null) {
-							c.drawRect(mClearRect, mBackgroundPaint);
+					if (c != null) {
+						synchronized (holder) {
+							c.drawColor(mConfig.BackgroundColor);
+							// c.drawRect(mClearRect, mBackgroundPaint);
 							mCurrentY = PlotPoints(c, mCurrentX, mDeltaX,
 									mCurrentY, y);
 							mCurrentX += mDeltaX;
-
 							if (mCurrentX >= mViewWidth) {
 								mCurrentX = 0;
 								mCurrentY = Float.MAX_VALUE;
@@ -145,6 +187,20 @@ public class WaveformPlotThread extends Thread {
 									mMinY = Float.MAX_VALUE;
 								}
 							}
+						}
+					}
+					if (mConfig.ShowFPS) {
+						endTime = System.currentTimeMillis();
+						mPerfDrawingDelaySum += endTime - startTime;
+						++mPerfCounter;
+						if (mPerfCounter == 50 && mPerfDrawingDelaySum != 0) {
+							final int fps = (int) (mPerfCounter / ((float) mPerfDrawingDelaySum / 1000));
+							if (mFPS != fps) {
+								mFPS = fps;
+								mOnShowFPS = true;
+							}
+							mPerfCounter = 0;
+							mPerfDrawingDelaySum = 0;
 						}
 					}
 				}
@@ -168,13 +224,49 @@ public class WaveformPlotThread extends Thread {
 		mClearRectWidthMultiplier = multiplier;
 	}
 
-	private float PlotPoints(Canvas canvas, float lastX, float deltaX,
-			float lastY, int[] newY) {
+	// private float PlotPointsByPath(Canvas canvas, float lastX, float deltaX,
+	// float lastY, int[] newY) {
+	// final float delta = deltaX / newY.length;
+	// final float scale = mScaling;
+	// mPathSeg.rewind();
+	// mPathSeg.setLastPoint(lastX, lastY);
+	// // mPathSeg.moveTo(lastX, lastY);
+	// float tempX = lastX;
+	// for (int element : newY) {
+	// tempX += delta;
+	// if (element > mConfig.DataMaxValue
+	// || element < mConfig.DataMinValue) {
+	// continue;
+	// }
+	// float scaledY = mViewHeight - element * scale;
+	// if (mConfig.ZoomRatio != 1) {
+	// float center = 0;
+	// if (mConfig.AutoPositionAfterZoom) {
+	// center = mAutoPositionNominalValue;
+	// if (mMaxY < scaledY) {
+	// mMaxY = scaledY;
+	// } else if (mMinY > scaledY) {
+	// mMinY = scaledY;
+	// }
+	// } else
+	// center = mViewHeight / 2;
+	// scaledY = scaledY > center ? (scaledY - center)
+	// * mConfig.ZoomRatio + center : center
+	// - (center - scaledY) * mConfig.ZoomRatio;
+	// }
+	// // Log.i(TAG, "orgY=" + element + "; scaledY=" + scaledY);
+	// mPathSeg.lineTo(tempX, scaledY);
+	// lastY = scaledY;
+	// lastX = tempX;
+	// }
+	// canvas.drawPath(mPathSeg, mLinePaint);
+	// return lastY;
+	// }
+
+	private float PlotPoints(final Canvas canvas, float lastX, float deltaX,
+			float lastY, final int[] newY) {
 		final float delta = deltaX / newY.length;
 		final float scale = mScaling;
-		mPathSeg.rewind();
-		mPathSeg.setLastPoint(lastX, lastY);
-		// mPathSeg.moveTo(lastX, lastY);
 		float tempX = lastX;
 		for (int element : newY) {
 			tempX += delta;
@@ -198,14 +290,55 @@ public class WaveformPlotThread extends Thread {
 						* mConfig.ZoomRatio + center : center
 						- (center - scaledY) * mConfig.ZoomRatio;
 			}
-			// Log.i(TAG, "orgY=" + element + "; scaledY=" + scaledY);
-			mPathSeg.lineTo(tempX, scaledY);
+			canvas.drawLine(lastX, lastY, tempX, scaledY, mLinePaint);
 			lastY = scaledY;
 			lastX = tempX;
 		}
-		canvas.drawPath(mPathSeg, mLinePaint);
 		return lastY;
 	}
+
+	// private float PlotPointsByDrawLines(final Canvas canvas, float lastX,
+	// float deltaX, float lastY, final int[] newY) {
+	// final float delta = deltaX / newY.length;
+	// final float scale = mScaling;
+	// float tempX = lastX;
+	// if (mDrawingPoints == null || mDrawingPoints.length != newY.length * 4) {
+	// mDrawingPoints = new float[newY.length * 4];
+	// }
+	// int index = 0;
+	// for (int element : newY) {
+	// tempX += delta;
+	// if (element > mConfig.DataMaxValue
+	// || element < mConfig.DataMinValue) {
+	// continue;
+	// }
+	// float scaledY = mViewHeight - element * scale;
+	// if (mConfig.ZoomRatio != 1) {
+	// float center = 0;
+	// if (mConfig.AutoPositionAfterZoom) {
+	// center = mAutoPositionNominalValue;
+	// if (mMaxY < scaledY) {
+	// mMaxY = scaledY;
+	// } else if (mMinY > scaledY) {
+	// mMinY = scaledY;
+	// }
+	// } else
+	// center = mViewHeight / 2;
+	// scaledY = scaledY > center ? (scaledY - center)
+	// * mConfig.ZoomRatio + center : center
+	// - (center - scaledY) * mConfig.ZoomRatio;
+	// }
+	// // canvas.drawLine(lastX, lastY, tempX, scaledY, mLinePaint);
+	// mDrawingPoints[index++] = lastX;
+	// mDrawingPoints[index++] = lastY;
+	// lastY = scaledY;
+	// lastX = tempX;
+	// mDrawingPoints[index++] = lastX;
+	// mDrawingPoints[index++] = lastY;
+	// }
+	// canvas.drawLines(mDrawingPoints, mLinePaint);
+	// return lastY;
+	// }
 
 	public synchronized BlockingQueue<int[]> getDataQueue() {
 		return mDataQueue;
@@ -286,7 +419,7 @@ public class WaveformPlotThread extends Thread {
 				Log.i(TAG, "setConfig async");
 			}
 			Message.obtain(mHandler, MESSAGE_SET_CONFIG, 0, 0, config)
-					.sendToTarget();
+			.sendToTarget();
 		} else {
 			updateConfig(config);
 		}

@@ -152,11 +152,12 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		public int BackgroundColor = 0xFF000000;
 		public int LineColor = 0xFF00FF00;
 		public int AxisColor = 0xFFFFFFFF;
-		public int PlotThreadPriority = Thread.NORM_PRIORITY;
+		public int PlotThreadPriority = Thread.NORM_PRIORITY + 1;
 		public float ZoomRatio = 1;
 		public boolean AutoPositionAfterZoom = false;
 		public int DefaultDataBufferSize = 1000;
 		public int DrawingDeltaX = 8;
+		public boolean ShowFPS = true;
 	}
 
 	public synchronized BlockingQueue<int[]> getDataQueue() {
