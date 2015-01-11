@@ -17,6 +17,8 @@
 package org.lunci.lunci_waveform_service;
 
 import java.lang.ref.WeakReference;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
 
 import org.lunci.lunci_waveform_data.AsyncMessage;
@@ -55,7 +57,7 @@ public class DataService extends Service {
 	}
 
 	protected final class DataServiceBinder extends Binder implements
-			IDataService {
+	IDataService {
 
 		public DataServiceBinder() {
 			super();
@@ -158,7 +160,7 @@ public class DataService extends Service {
 	}
 
 	private void stopConnection() {
-		if (mDataSendingThread != null && mDataSendingThread.isAlive()) {
+		if (mDataSendingThread != null) {
 			mDataSendingThread.interrupt();
 		}
 	}
@@ -187,19 +189,16 @@ public class DataService extends Service {
 		}
 	}
 
-	private final class DataSendingThread extends Thread {
-		private boolean stop = false;
+	private final class DataSendingThread {
 		private final DataServiceConfig mConfig;
 		private final IWaveformGenerator[] mDataGenSet;
-		private int mDataCounter = 0;
 		private long mDataCounterStartTime;
 		private long mDataCounterEndTime;
-		private int mDataPerSec = 0;
-		private final EventBus mEventBus = EventBus.getDefault();
+		private Timer mTimer;
 
 		public DataSendingThread(DataServiceConfig config) {
 			super();
-			this.setPriority(Thread.NORM_PRIORITY);
+			// this.setPriority(Thread.NORM_PRIORITY + 1);
 			mConfig = config;
 			mDataGenSet = new IWaveformGenerator[] {
 					new SineWaveGenerator(1000, 10, mConfig.FPS
@@ -208,9 +207,20 @@ public class DataService extends Service {
 									* mConfig.DATA_SIZE, 5000) };
 		}
 
-		@Override
-		public void run() {
-			while (!stop) {
+		public void start() {
+			interrupt();
+			mTimer = new Timer();
+			mTimer.scheduleAtFixedRate(mDataTask, 0, 1000 / mConfig.FPS);
+		}
+
+		private final TimerTask mDataTask = new TimerTask() {
+
+			private int mDataCounter = 0;
+			private int mDataPerSec = 0;
+			private final EventBus mEventBus = EventBus.getDefault();
+
+			@Override
+			public void run() {
 				if (mDataCounter == 0) {
 					mDataCounterStartTime = System.currentTimeMillis();
 				}
@@ -247,20 +257,16 @@ public class DataService extends Service {
 					}
 					mDataCounter = 0;
 				}
-				try {
-					Thread.sleep(1000 / mConfig.FPS);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				// mEventBus.post(set);
 			}
-		}
 
-		@Override
+		};
+
 		public void interrupt() {
-			stop = true;
-			super.interrupt();
+			if (mTimer != null) {
+				mTimer.cancel();
+				mTimer.purge();
+				mTimer = null;
+			}
 		}
 	}
 
