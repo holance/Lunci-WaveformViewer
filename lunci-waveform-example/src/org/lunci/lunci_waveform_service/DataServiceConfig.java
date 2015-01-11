@@ -17,7 +17,7 @@
 package org.lunci.lunci_waveform_service;
 
 public class DataServiceConfig {
-	public final int FPS = 50;
-	public final int DATA_SIZE = 10;
+	public final int FPS = 32;
+	public final int DATA_SIZE = 32;
 	public final int DATA_COUNTER_LIMIT = 200;
 }
