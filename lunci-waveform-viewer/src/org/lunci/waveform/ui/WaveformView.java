@@ -30,7 +30,7 @@ import android.view.SurfaceView;
 public class WaveformView extends SurfaceView implements SurfaceHolder.Callback {
 	private static final String TAG = WaveformView.class.getSimpleName();
 	private WaveformPlotThread mPlotThread;
-	private Config mConfig = new Config();
+	private WaveformViewConfig mConfig = new WaveformViewConfig();
 
 	public WaveformView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -122,18 +122,25 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		mConfig.DataMinValue = mDataMin;
 	}
 
-	public void setConfig(Config config) {
+	public void setConfig(WaveformViewConfig config) {
 		mConfig = config;
 		if (mPlotThread != null)
 			mPlotThread.setConfig(mConfig);
 	}
 
-	public Config getConfig() {
+	public WaveformViewConfig getConfig() {
 		return mConfig;
 	}
 
-	public void setZoomRatio(float ratio) {
-		mConfig.ZoomRatio = ratio;
+	public void setVerticalZoomRatio(float ratio) {
+		mConfig.VerticalZoom = ratio;
+		if (mPlotThread != null) {
+			mPlotThread.setConfig(mConfig);
+		}
+	}
+
+	public void setHorizontalZoomRatio(float ratio) {
+		mConfig.HorizontalZoom = ratio;
 		if (mPlotThread != null) {
 			mPlotThread.setConfig(mConfig);
 		}
@@ -144,20 +151,6 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		if (mPlotThread != null) {
 			mPlotThread.setConfig(mConfig);
 		}
-	}
-
-	public static class Config {
-		public int DataMaxValue = Integer.MAX_VALUE;
-		public int DataMinValue = Integer.MIN_VALUE;
-		public int BackgroundColor = 0xFF000000;
-		public int LineColor = 0xFF00FF00;
-		public int AxisColor = 0xFFFFFFFF;
-		public int PlotThreadPriority = Thread.NORM_PRIORITY + 1;
-		public float ZoomRatio = 1;
-		public boolean AutoPositionAfterZoom = false;
-		public int DefaultDataBufferSize = 1000;
-		public int DrawingDeltaX = 8;
-		public boolean ShowFPS = true;
 	}
 
 	public synchronized BlockingQueue<int[]> getDataQueue() {

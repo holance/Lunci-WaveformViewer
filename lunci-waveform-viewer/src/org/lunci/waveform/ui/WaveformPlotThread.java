@@ -55,7 +55,7 @@ public class WaveformPlotThread extends Thread {
 	private final Paint mAxisPaint = new Paint();
 	private final Paint mBackgroundPaint = new Paint();
 	private final Paint mFPSPaint = new Paint();
-	private WaveformView.Config mConfig = new WaveformView.Config();
+	private WaveformViewConfig mConfig = new WaveformViewConfig();
 	private float mScaling = 1f;
 	private boolean mClearScreenFlag = false;
 	// private final Path mPathSeg = new Path();
@@ -88,7 +88,7 @@ public class WaveformPlotThread extends Thread {
 	public void setWidthHeight(int width, int height) {
 		if (this.isAlive()) {
 			Message.obtain(mHandler, MESSAGE_SET_WIDTH_HEIGHT, width, height)
-					.sendToTarget();
+			.sendToTarget();
 		} else {
 			updateWidthHeightSafe(width, height);
 		}
@@ -122,6 +122,7 @@ public class WaveformPlotThread extends Thread {
 		long endTime = 0;
 		while (!stop) {
 			c = null;
+			final float deltaX = mDeltaX * mConfig.HorizontalZoom;
 			try {
 				if (mOnShowFPS) {
 					final String fpsText = String.valueOf(mFPS);
@@ -158,16 +159,16 @@ public class WaveformPlotThread extends Thread {
 						startTime = System.currentTimeMillis();
 					}
 					mClearRect.left = (int) mCurrentX;
-					mClearRect.right = (int) (mCurrentX + mDeltaX
+					mClearRect.right = (int) (mCurrentX + deltaX
 							* mClearRectWidthMultiplier);
 					c = holder.lockCanvas(mClearRect);
 					if (c != null) {
 						synchronized (holder) {
 							c.drawColor(mConfig.BackgroundColor);
 							// c.drawRect(mClearRect, mBackgroundPaint);
-							mCurrentY = PlotPoints(c, mCurrentX, mDeltaX,
+							mCurrentY = PlotPoints(c, mCurrentX, deltaX,
 									mCurrentY, y);
-							mCurrentX += mDeltaX;
+							mCurrentX += deltaX;
 							if (mCurrentX >= mViewWidth) {
 								mCurrentX = 0;
 								mCurrentY = Float.MAX_VALUE;
@@ -275,7 +276,7 @@ public class WaveformPlotThread extends Thread {
 				continue;
 			}
 			float scaledY = mViewHeight - element * scale;
-			if (mConfig.ZoomRatio != 1) {
+			if (mConfig.VerticalZoom != 1) {
 				float center = 0;
 				if (mConfig.AutoPositionAfterZoom) {
 					center = mAutoPositionNominalValue;
@@ -287,8 +288,8 @@ public class WaveformPlotThread extends Thread {
 				} else
 					center = mViewHeight / 2;
 				scaledY = scaledY > center ? (scaledY - center)
-						* mConfig.ZoomRatio + center : center
-						- (center - scaledY) * mConfig.ZoomRatio;
+						* mConfig.VerticalZoom + center : center
+						- (center - scaledY) * mConfig.VerticalZoom;
 			}
 			canvas.drawLine(lastX, lastY, tempX, scaledY, mLinePaint);
 			lastY = scaledY;
@@ -356,7 +357,7 @@ public class WaveformPlotThread extends Thread {
 		mDeltaX = delta;
 	}
 
-	private void updateConfig(WaveformView.Config config) {
+	private void updateConfig(WaveformViewConfig config) {
 		updateScaling(mViewHeight, config.DataMaxValue, config.DataMinValue);
 		if (BuildConfig.DEBUG) {
 			Log.d(TAG, "updating config, dataMax=" + config.DataMaxValue
@@ -390,7 +391,7 @@ public class WaveformPlotThread extends Thread {
 			boolean result = true;
 			switch (msg.what) {
 			case MESSAGE_SET_CONFIG:
-				final WaveformView.Config config = (WaveformView.Config) msg.obj;
+				final WaveformViewConfig config = (WaveformViewConfig) msg.obj;
 				if (config != null) {
 					updateConfig(config);
 				}
@@ -413,13 +414,13 @@ public class WaveformPlotThread extends Thread {
 		return mHandler;
 	}
 
-	public void setConfig(WaveformView.Config config) {
+	public void setConfig(WaveformViewConfig config) {
 		if (this.isAlive()) {
 			if (BuildConfig.DEBUG) {
 				Log.i(TAG, "setConfig async");
 			}
 			Message.obtain(mHandler, MESSAGE_SET_CONFIG, 0, 0, config)
-			.sendToTarget();
+					.sendToTarget();
 		} else {
 			updateConfig(config);
 		}
