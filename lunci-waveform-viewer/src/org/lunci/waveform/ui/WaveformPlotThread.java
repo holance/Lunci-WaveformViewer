@@ -59,7 +59,7 @@ public class WaveformPlotThread extends Thread {
 	private float mScaling = 1f;
 	private boolean mClearScreenFlag = false;
 	// private final Path mPathSeg = new Path();
-	private final Rect mTextClearRect = new Rect();
+	private final Rect mFPSTextClearRect = new Rect();
 	private int mFPS = -1;
 	private int mPerfCounter = 0;
 	private long mPerfDrawingDelaySum = 0;
@@ -128,17 +128,17 @@ public class WaveformPlotThread extends Thread {
 					final String fpsText = String.valueOf(mFPS);
 					mFPSPaint.getTextBounds(fpsText, 0, fpsText.length(),
 							mFPSBounds);
-					mTextClearRect.left = 10;
-					mTextClearRect.right = mFPSBounds.width() + 20;
-					mTextClearRect.top = 10;
-					mTextClearRect.bottom = mFPSBounds.height() + 10;
-					c = holder.lockCanvas(mTextClearRect);
+					mFPSTextClearRect.left = 10;
+					mFPSTextClearRect.right = mFPSBounds.width() + 20;
+					mFPSTextClearRect.top = 10;
+					mFPSTextClearRect.bottom = mFPSBounds.height() + 10;
+					c = holder.lockCanvas(mFPSTextClearRect);
 					if (c != null) {
 						synchronized (holder) {
 							c.drawColor(mConfig.BackgroundColor);
 							c.drawText(String.valueOf(mFPS),
-									mTextClearRect.left, mTextClearRect.bottom,
-									mFPSPaint);
+									mFPSTextClearRect.left,
+									mFPSTextClearRect.bottom, mFPSPaint);
 						}
 					}
 					mOnShowFPS = false;
@@ -155,6 +155,9 @@ public class WaveformPlotThread extends Thread {
 					resetAutoPositionParams();
 				} else {
 					int[] y = mDataQueue.take();
+					if (mConfig.ShowFPS && mCurrentX <= mFPSTextClearRect.right) {
+						mOnShowFPS = true;
+					}
 					if (mConfig.ShowFPS) {
 						startTime = System.currentTimeMillis();
 					}
