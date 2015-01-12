@@ -122,6 +122,9 @@ public class WaveformPlotThread extends Thread {
 		Canvas c;
 		long startTime = 0;
 		long endTime = 0;
+		boolean cycleCompleted = true;
+		int remainIndex = 0;
+		int[] y = null;
 		while (!stop) {
 			c = null;
 			final float deltaX = mDeltaX * mConfig.HorizontalZoom;
@@ -160,7 +163,9 @@ public class WaveformPlotThread extends Thread {
 					mClearScreenFlag = false;
 					resetAutoPositionParams();
 				} else {
-					int[] y = mDataQueue.take();
+					if (cycleCompleted) {// take new y set if cycle is completed
+						y = mDataQueue.take();
+					}
 					if (mConfig.ShowFPS && mCurrentX <= mFPSTextClearRect.right) {
 						mOnShowFPS = true;
 					}
@@ -178,27 +183,12 @@ public class WaveformPlotThread extends Thread {
 										mClearRect.right, mAxialXCoord.y,
 										mAxialPaint);
 							}
-							mCurrentY = PlotPoints(c, mCurrentX, deltaX,
-									mCurrentY, y);
-							mCurrentX += deltaX;
-							if (mCurrentX >= mViewWidth) {
-								mCurrentX = mConfig.PaddingLeft;
-								mCurrentY = Float.MAX_VALUE;
-								if (mConfig.AutoPositionAfterZoom
-										&& mMaxY > mMinY) {
-									final float tempNominal = (mMaxY - mMinY) / 2;
-									mAutoPositionNominalValue = mMaxY
-											- tempNominal;
-									if (BuildConfig.DEBUG) {
-										Log.i(TAG, "autoPositionNominalValue="
-												+ mAutoPositionNominalValue
-												+ "; tempNominal="
-												+ tempNominal + "; maxY="
-												+ mMaxY + "; minY=" + mMinY);
-									}
-									mMaxY = Float.MIN_VALUE;
-									mMinY = Float.MAX_VALUE;
-								}
+							remainIndex = PlotPoints(c, deltaX, y, remainIndex);
+							if (remainIndex != 0) {// reach end of view, cycle
+								// is not completed yet.
+								cycleCompleted = false;
+							} else {
+								cycleCompleted = true;
 							}
 						}
 					}
@@ -272,13 +262,16 @@ public class WaveformPlotThread extends Thread {
 	// return lastY;
 	// }
 
-	private float PlotPoints(final Canvas canvas, float lastX, float deltaX,
-			float lastY, final int[] newY) {
+	private int PlotPoints(final Canvas canvas, float deltaX, final int[] newY,
+			final int startIndex) {
 		final float delta = deltaX / newY.length;
 		final float scale = mScaling;
-		float tempX = lastX;
-		for (int element : newY) {
+		float tempX = mCurrentX;
+		int index = startIndex;
+		int element = 0;
+		for (; index < newY.length; ++index) {
 			tempX += delta;
+			element = newY[index];
 			if (element > mConfig.DataMaxValue
 					|| element < mConfig.DataMinValue) {
 				continue;
@@ -299,11 +292,28 @@ public class WaveformPlotThread extends Thread {
 						* mConfig.VerticalZoom + center : center
 						- (center - scaledY) * mConfig.VerticalZoom;
 			}
-			canvas.drawLine(lastX, lastY, tempX, scaledY, mLinePaint);
-			lastY = scaledY;
-			lastX = tempX;
+			canvas.drawLine(mCurrentX, mCurrentY, tempX, scaledY, mLinePaint);
+			mCurrentY = scaledY;
+			mCurrentX = tempX;
+			if (mCurrentX >= mViewWidth) {
+				mCurrentX = mConfig.PaddingLeft;
+				mCurrentY = Float.MAX_VALUE;
+				if (mConfig.AutoPositionAfterZoom && mMaxY > mMinY) {
+					final float tempNominal = (mMaxY - mMinY) / 2;
+					mAutoPositionNominalValue = mMaxY - tempNominal;
+					if (BuildConfig.DEBUG) {
+						Log.i(TAG, "autoPositionNominalValue="
+								+ mAutoPositionNominalValue + "; tempNominal="
+								+ tempNominal + "; maxY=" + mMaxY + "; minY="
+								+ mMinY);
+					}
+					mMaxY = Float.MIN_VALUE;
+					mMinY = Float.MAX_VALUE;
+				}
+				return index;
+			}
 		}
-		return lastY;
+		return 0;
 	}
 
 	// private float PlotPointsByDrawLines(final Canvas canvas, float lastX,
