@@ -73,6 +73,7 @@ public class WaveformFragment extends Fragment_ServiceManagerBase {
 		config.DataMaxValue = 10000;
 		config.DrawingDeltaX = 8;
 		config.PaddingLeft = 30;
+		config.AutoPositionAfterZoom = true;
 		mWaveformView.setConfig(config);
 		final ZoomControls zoomControls = (ZoomControls) rootView
 				.findViewById(R.id.zoomControls_vertical_zoom);

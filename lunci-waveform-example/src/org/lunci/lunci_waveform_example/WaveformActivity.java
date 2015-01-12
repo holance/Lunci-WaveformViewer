@@ -50,9 +50,9 @@ public class WaveformActivity extends ActivityServiceManagerBase {
 			final WaveformFragment fragment2 = new WaveformFragment();
 			fragment2.setDataIndex(1);
 			final WaveformFragment fragment3 = new WaveformFragment();
-			fragment3.setDataIndex(0);
+			fragment3.setDataIndex(2);
 			final WaveformFragment fragment4 = new WaveformFragment();
-			fragment4.setDataIndex(1);
+			fragment4.setDataIndex(3);
 			final WaveformFragment fragment5 = new WaveformFragment();
 			fragment5.setDataIndex(0);
 			final WaveformFragment fragment6 = new WaveformFragment();

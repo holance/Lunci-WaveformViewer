@@ -224,13 +224,17 @@ public class DataService extends Service {
 				if (mDataCounter == 0) {
 					mDataCounterStartTime = System.currentTimeMillis();
 				}
-				final int[][] data = new int[mDataGenSet.length][mConfig.DATA_SIZE];
+				final int[][] data = new int[mDataGenSet.length + 2][mConfig.DATA_SIZE];
 				synchronized (mClients) {
-					for (int i = 0; i < data.length; ++i) {
+					for (int i = 0; i < mDataGenSet.length; ++i) {
 						for (int j = 0; j < data[i].length; ++j) {
 							final double value = mDataGenSet[i].get();
 							data[i][j] = (int) Math.round(value);
 						}
+					}
+					for (int i = 0; i < data[2].length; ++i) {
+						data[2][i] = data[1][i] - 5000 > 0 ? data[0][i] : 5000;
+						data[3][i] = data[1][i] - 5000 < 0 ? data[0][i] : 5000;
 					}
 					for (int i = 0; i < mClients.size(); ++i) {
 						final GraphDataClient client = mClients.get(mClients
