@@ -42,7 +42,7 @@ public class WaveformPlotThread extends Thread {
 	private boolean stop = false;
 	private int mViewHeight = 0;// unit:pixel.
 	private int mViewWidth = 0;// unit:pixel.
-	private final Point mAxialXCoord = new Point(0, 0);
+	private final Point mAxialCoord = new Point(0, 0);
 	private float mAutoPositionNominalValue = 0;
 	private float mDeltaX = 4;// unit:pixel.
 	private float mCurrentX = 0;// unit:pixel.
@@ -50,19 +50,23 @@ public class WaveformPlotThread extends Thread {
 	private float mMaxY, mMinY;
 	private BlockingQueue<int[]> mDataQueue;
 	private final Rect mClearRect = new Rect();
+
+	// Paints
 	private final Paint mLinePaint = new Paint();
 	private final Paint mAxialPaint = new Paint();
 	private final Paint mBackgroundPaint = new Paint();
 	private final Paint mFPSPaint = new Paint();
+
 	private WaveformViewConfig mConfig = new WaveformViewConfig();
 	private float mScaling = 1f;
 	private boolean mClearScreenFlag = false;
-	// private final Path mPathSeg = new Path();
+
+	// FPS drawing
 	private final Rect mFPSTextClearRect = new Rect();
 	private int mFPS = -1;
 	private int mPerfCounter = 0;
 	private long mPerfDrawingDelaySum = 0;
-	private boolean mOnShowFPS = false;
+	private boolean mOnShowFPSFlag = false;
 	private final Rect mFPSBounds = new Rect();
 
 	// private float[] mDrawingPoints;
@@ -102,7 +106,7 @@ public class WaveformPlotThread extends Thread {
 		mClearRect.top = 0;
 		mClearRect.bottom = height;
 		updateScaling(height, mConfig.DataMaxValue, mConfig.DataMinValue);
-		mAxialXCoord.y = height / 2;
+		mAxialCoord.y = height / 2;
 		mAutoPositionNominalValue = height / 2;
 		mMaxY = Float.MIN_VALUE;
 		mMinY = Float.MAX_VALUE;
@@ -129,7 +133,7 @@ public class WaveformPlotThread extends Thread {
 			c = null;
 			final float deltaX = mDeltaX * mConfig.HorizontalZoom;
 			try {
-				if (mOnShowFPS) {
+				if (mOnShowFPSFlag) {
 					final String fpsText = String.valueOf(mFPS);
 					mFPSPaint.getTextBounds(fpsText, 0, fpsText.length(),
 							mFPSBounds);
@@ -146,7 +150,7 @@ public class WaveformPlotThread extends Thread {
 									mFPSTextClearRect.bottom, mFPSPaint);
 						}
 					}
-					mOnShowFPS = false;
+					mOnShowFPSFlag = false;
 				} else if (mClearScreenFlag) {
 					mCurrentX = mConfig.PaddingLeft;
 					mCurrentY = Float.MAX_VALUE;
@@ -155,8 +159,8 @@ public class WaveformPlotThread extends Thread {
 						synchronized (holder) {
 							c.drawColor(mConfig.BackgroundColor);
 							if (mConfig.ShowAxialX) {
-								c.drawLine(mConfig.PaddingLeft, mAxialXCoord.y,
-										mViewWidth, mAxialXCoord.y, mAxialPaint);
+								c.drawLine(mConfig.PaddingLeft, mAxialCoord.y,
+										mViewWidth, mAxialCoord.y, mAxialPaint);
 							}
 						}
 					}
@@ -167,7 +171,7 @@ public class WaveformPlotThread extends Thread {
 						y = mDataQueue.take();
 					}
 					if (mConfig.ShowFPS && mCurrentX <= mFPSTextClearRect.right) {
-						mOnShowFPS = true;
+						mOnShowFPSFlag = true;
 					}
 					if (mConfig.ShowFPS) {
 						startTime = System.currentTimeMillis();
@@ -179,8 +183,8 @@ public class WaveformPlotThread extends Thread {
 						synchronized (holder) {
 							c.drawColor(mConfig.BackgroundColor);
 							if (mConfig.ShowAxialX) {
-								c.drawLine(mClearRect.left, mAxialXCoord.y,
-										mClearRect.right, mAxialXCoord.y,
+								c.drawLine(mClearRect.left, mAxialCoord.y,
+										mClearRect.right, mAxialCoord.y,
 										mAxialPaint);
 							}
 							remainIndex = PlotPoints(c, deltaX, y, remainIndex);
@@ -200,7 +204,7 @@ public class WaveformPlotThread extends Thread {
 							final int fps = (int) (mPerfCounter / ((float) mPerfDrawingDelaySum / 1000));
 							if (mFPS != fps) {
 								mFPS = fps;
-								mOnShowFPS = true;
+								mOnShowFPSFlag = true;
 							}
 							mPerfCounter = 0;
 							mPerfDrawingDelaySum = 0;
