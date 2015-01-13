@@ -57,7 +57,7 @@ public class DataService extends Service {
 	}
 
 	protected final class DataServiceBinder extends Binder implements
-	IDataService {
+			IDataService {
 
 		public DataServiceBinder() {
 			super();
@@ -203,8 +203,8 @@ public class DataService extends Service {
 			mDataGenSet = new IWaveformGenerator[] {
 					new SineWaveGenerator(1000, 10, mConfig.FPS
 							* mConfig.DATA_SIZE, 5000),
-							new RectWaveGenerator(1500, 2, mConfig.FPS
-									* mConfig.DATA_SIZE, 5000) };
+					new RectWaveGenerator(1500, 2, mConfig.FPS
+							* mConfig.DATA_SIZE, 5000) };
 		}
 
 		public void start() {
@@ -224,7 +224,7 @@ public class DataService extends Service {
 				if (mDataCounter == 0) {
 					mDataCounterStartTime = System.currentTimeMillis();
 				}
-				final int[][] data = new int[mDataGenSet.length + 2][mConfig.DATA_SIZE];
+				final int[][] data = new int[mDataGenSet.length + 3][mConfig.DATA_SIZE];
 				synchronized (mClients) {
 					for (int i = 0; i < mDataGenSet.length; ++i) {
 						for (int j = 0; j < data[i].length; ++j) {
@@ -235,6 +235,7 @@ public class DataService extends Service {
 					for (int i = 0; i < data[2].length; ++i) {
 						data[2][i] = data[1][i] - 5000 > 0 ? data[0][i] : 5000;
 						data[3][i] = data[1][i] - 5000 < 0 ? data[0][i] : 5000;
+						data[4][i] = 1;
 					}
 					for (int i = 0; i < mClients.size(); ++i) {
 						final GraphDataClient client = mClients.get(mClients
