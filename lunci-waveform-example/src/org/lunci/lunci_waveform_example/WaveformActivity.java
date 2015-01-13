@@ -54,21 +54,21 @@ public class WaveformActivity extends ActivityServiceManagerBase {
 			final WaveformFragment fragment4 = new WaveformFragment();
 			fragment4.setDataIndex(3);
 			final WaveformFragment fragment5 = new WaveformFragment();
-			fragment5.setDataIndex(0);
+			fragment5.setDataIndex(4);
 			final WaveformFragment fragment6 = new WaveformFragment();
 			fragment6.setDataIndex(1);
 			getSupportFragmentManager().beginTransaction()
-			.add(R.id.frameLayout_wave_1, fragment1).commit();
+					.add(R.id.frameLayout_wave_1, fragment1).commit();
 			getSupportFragmentManager().beginTransaction()
-			.add(R.id.frameLayout_wave_2, fragment2).commit();
+					.add(R.id.frameLayout_wave_2, fragment2).commit();
 			getSupportFragmentManager().beginTransaction()
-			.add(R.id.frameLayout_wave_3, fragment3).commit();
+					.add(R.id.frameLayout_wave_3, fragment3).commit();
 			getSupportFragmentManager().beginTransaction()
-			.add(R.id.frameLayout_wave_4, fragment4).commit();
+					.add(R.id.frameLayout_wave_4, fragment4).commit();
 			getSupportFragmentManager().beginTransaction()
-			.add(R.id.frameLayout_wave_5, fragment5).commit();
+					.add(R.id.frameLayout_wave_5, fragment5).commit();
 			getSupportFragmentManager().beginTransaction()
-			.add(R.id.frameLayout_wave_6, fragment6).commit();
+					.add(R.id.frameLayout_wave_6, fragment6).commit();
 		} else {
 
 		}
