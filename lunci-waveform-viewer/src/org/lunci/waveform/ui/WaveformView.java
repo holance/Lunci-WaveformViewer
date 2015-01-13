@@ -24,17 +24,23 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 
 public class WaveformView extends SurfaceView implements SurfaceHolder.Callback {
 	private static final String TAG = WaveformView.class.getSimpleName();
 	private WaveformPlotThread mPlotThread;
 	private WaveformViewConfig mConfig = new WaveformViewConfig();
+	private final GestureDetector mGestureDetector;
 
 	public WaveformView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		getHolder().addCallback(this);
+		mGestureDetector = new GestureDetector(this.getContext(),
+				mOnGestureListener);
 	}
 
 	@Override
@@ -51,6 +57,7 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		if (BuildConfig.DEBUG) {
 			Log.i(TAG, "surfaceCreated");
 		}
+		this.setOnTouchListener(mTouchListener);
 		mPlotThread = new WaveformPlotThread(getHolder(), this);
 		mPlotThread.setWidthHeight(this.getWidth(), this.getHeight());
 		mPlotThread.start();
@@ -58,6 +65,7 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
+		this.setOnTouchListener(null);
 		mPlotThread.interrupt();
 		try {
 			mPlotThread.join();
@@ -166,4 +174,62 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 		else
 			return null;
 	}
+
+	private final OnTouchListener mTouchListener = new OnTouchListener() {
+
+		@Override
+		public boolean onTouch(View v, MotionEvent event) {
+			mGestureDetector.onTouchEvent(event);
+			return true;
+		}
+	};
+
+	private final GestureDetector.OnGestureListener mOnGestureListener = new GestureDetector.OnGestureListener() {
+
+		@Override
+		public boolean onDown(MotionEvent e) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void onShowPress(MotionEvent e) {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public boolean onSingleTapUp(MotionEvent e) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public boolean onScroll(MotionEvent e1, MotionEvent e2,
+				float distanceX, float distanceY) {
+			if (mConfig.EnableVerticalGestureMove
+					&& e2.getAction() == MotionEvent.ACTION_MOVE) {
+				if (mPlotThread != null) {
+					mPlotThread.moveVertical(distanceY
+							* mConfig.VerticalGestureMoveRatio);
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public void onLongPress(MotionEvent e) {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
+				float velocityY) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+	};
 }

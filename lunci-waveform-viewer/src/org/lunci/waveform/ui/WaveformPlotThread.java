@@ -38,12 +38,14 @@ public class WaveformPlotThread extends Thread {
 	public static final int MESSAGE_SET_CONFIG = 1;
 	public static final int MESSAGE_SET_WIDTH_HEIGHT = 2;
 	public static final int MESSAGE_CLEAR_WAVEFORM = 3;
+	public static final int MESSAGE_MOVE_VERTICAL = 4;
 	private final SurfaceHolder holder;
 	private boolean stop = false;
 	private int mViewHeight = 0;// unit:pixel.
 	private int mViewWidth = 0;// unit:pixel.
 	private final Point mAxialCoord = new Point(0, 0);
 	private float mAutoPositionNominalValue = 0;
+	private float mVerticalMoveOffset = 0;
 	private float mDeltaX = 4;// unit:pixel.
 	private float mCurrentX = 0;// unit:pixel.
 	private float mCurrentY = Float.MAX_VALUE;// unit:pixel.
@@ -296,13 +298,14 @@ public class WaveformPlotThread extends Thread {
 						* mConfig.VerticalZoom + center : center
 						- (center - scaledY) * mConfig.VerticalZoom;
 			}
+			scaledY += mVerticalMoveOffset;
 			canvas.drawLine(mCurrentX, mCurrentY, tempX, scaledY, mLinePaint);
 			mCurrentY = scaledY;
 			mCurrentX = tempX;
 			if (mCurrentX >= mViewWidth) {
 				mCurrentX = mConfig.PaddingLeft;
 				mCurrentY = Float.MAX_VALUE;
-				if (mConfig.AutoPositionAfterZoom && mMaxY > mMinY) {
+				if (mConfig.AutoPositionAfterZoom && mMaxY >= mMinY) {
 					final float tempNominal = (mMaxY - mMinY) / 2;
 					mAutoPositionNominalValue = mMaxY - tempNominal;
 					if (BuildConfig.DEBUG) {
@@ -427,6 +430,17 @@ public class WaveformPlotThread extends Thread {
 			case MESSAGE_CLEAR_WAVEFORM:
 				mClearScreenFlag = true;
 				break;
+			case MESSAGE_MOVE_VERTICAL:
+				if (msg.obj != null) {
+					final float offset = (float) msg.obj;
+					mVerticalMoveOffset -= offset;
+					if (BuildConfig.DEBUG) {
+						Log.i(TAG, "move vertical, offset=" + offset
+								+ "; mVerticalMoveOffset="
+								+ mVerticalMoveOffset);
+					}
+				}
+				break;
 			default:
 				result = false;
 				break;
@@ -446,7 +460,7 @@ public class WaveformPlotThread extends Thread {
 			}
 			mHandler.removeMessages(MESSAGE_SET_CONFIG);
 			Message.obtain(mHandler, MESSAGE_SET_CONFIG, 0, 0, config)
-			.sendToTarget();
+					.sendToTarget();
 		} else {
 			updateConfig(config);
 		}
@@ -455,6 +469,12 @@ public class WaveformPlotThread extends Thread {
 	public void clearWaveform() {
 		if (this.isAlive()) {
 			Message.obtain(mHandler, MESSAGE_CLEAR_WAVEFORM).sendToTarget();
+		}
+	}
+
+	public void moveVertical(float y) {
+		if (this.isAlive()) {
+			Message.obtain(mHandler, MESSAGE_MOVE_VERTICAL, y).sendToTarget();
 		}
 	}
 }

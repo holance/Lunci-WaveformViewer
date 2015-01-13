@@ -18,4 +18,6 @@ public class WaveformViewConfig {
 	public int PaddingLeft = 0;
 	public int PaddingTop = 0;
 	public int PaddingBottom = 0;
+	public boolean EnableVerticalGestureMove = false;
+	public float VerticalGestureMoveRatio = 1;
 }
