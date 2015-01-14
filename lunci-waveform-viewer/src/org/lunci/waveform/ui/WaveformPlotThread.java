@@ -96,7 +96,7 @@ public class WaveformPlotThread extends Thread {
 	public void setWidthHeight(int width, int height) {
 		if (this.isAlive()) {
 			Message.obtain(mHandler, MESSAGE_SET_WIDTH_HEIGHT, width, height)
-					.sendToTarget();
+			.sendToTarget();
 		} else {
 			updateWidthHeightSafe(width, height);
 		}
@@ -117,7 +117,7 @@ public class WaveformPlotThread extends Thread {
 	private void resetAutoPositionParams() {
 		mMaxY = Float.MIN_VALUE;
 		mMinY = Float.MAX_VALUE;
-		mAutoPositionNominalValue = mViewHeight / 2;
+		// mAutoPositionNominalValue = mViewHeight / 2;
 	}
 
 	@Override
@@ -167,6 +167,7 @@ public class WaveformPlotThread extends Thread {
 						}
 					}
 					mClearScreenFlag = false;
+					// mVerticalMoveOffset = 0;
 					resetAutoPositionParams();
 				} else {
 					if (cycleCompleted) {// take new y set if cycle is completed
@@ -278,11 +279,12 @@ public class WaveformPlotThread extends Thread {
 		for (; index < newY.length; ++index) {
 			tempX += delta;
 			element = newY[index];
-			if (element > mConfig.DataMaxValue
-					|| element < mConfig.DataMinValue) {
-				continue;
-			}
+			// if (element > mConfig.DataMaxValue
+			// || element < mConfig.DataMinValue) {
+			// continue;
+			// }
 			float scaledY = mViewHeight - element * scale;
+			scaledY += mVerticalMoveOffset;
 			if (mConfig.VerticalZoom != 1) {
 				float center = 0;
 				if (mConfig.AutoPositionAfterZoom) {
@@ -298,8 +300,10 @@ public class WaveformPlotThread extends Thread {
 						* mConfig.VerticalZoom + center : center
 						- (center - scaledY) * mConfig.VerticalZoom;
 			}
-			scaledY += mVerticalMoveOffset;
+
+			// if (scaledY >= 0 && scaledY <= mViewHeight) {
 			canvas.drawLine(mCurrentX, mCurrentY, tempX, scaledY, mLinePaint);
+			// }
 			mCurrentY = scaledY;
 			mCurrentX = tempX;
 			if (mCurrentX >= mViewWidth) {
@@ -406,7 +410,7 @@ public class WaveformPlotThread extends Thread {
 		if (dataMax - dataMin == 0)
 			return;
 		mScaling = (float) height / (dataMax - dataMin);
-		clearWaveform();
+		// clearWaveform();
 		if (BuildConfig.DEBUG) {
 			Log.d(TAG, "updating scaling:" + mScaling + "; height=" + height);
 		}
@@ -460,7 +464,7 @@ public class WaveformPlotThread extends Thread {
 			}
 			mHandler.removeMessages(MESSAGE_SET_CONFIG);
 			Message.obtain(mHandler, MESSAGE_SET_CONFIG, 0, 0, config)
-					.sendToTarget();
+			.sendToTarget();
 		} else {
 			updateConfig(config);
 		}
