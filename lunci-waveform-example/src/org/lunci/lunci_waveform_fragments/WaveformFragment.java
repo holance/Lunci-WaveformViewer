@@ -1,25 +1,20 @@
 /*
- * Copyright (C) 2014 Lunci Hua
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Copyright (C) 2015 Lunci Hua
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  *     http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
  */
 
 package org.lunci.lunci_waveform_fragments;
-
-import org.lunci.lunci_waveform_example.BuildConfig;
-import org.lunci.lunci_waveform_example.R;
-import org.lunci.waveform.ui.WaveformView;
-import org.lunci.waveform.ui.WaveformViewConfig;
 
 import android.content.ComponentName;
 import android.os.Bundle;
@@ -31,6 +26,11 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ZoomControls;
+
+import org.lunci.lunci_waveform_example.BuildConfig;
+import org.lunci.lunci_waveform_example.R;
+import org.lunci.waveform.ui.WaveformView;
+import org.lunci.waveform.ui.WaveformViewConfig;
 
 public class WaveformFragment extends Fragment_ServiceManagerBase {
 	private static final String TAG = WaveformFragment.class.getSimpleName();
