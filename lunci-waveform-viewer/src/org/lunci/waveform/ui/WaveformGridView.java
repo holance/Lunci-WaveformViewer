@@ -96,7 +96,7 @@ public class WaveformGridView extends View {
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565);
 		mCanvas.setBitmap(mBitmap);
-		mCanvas.drawColor(0xFF123456);
+		mCanvas.drawColor(mConfig.BackgroundColor);
 		mWidth = w;
 		mHeight = h;
 		initAxials(mConfig);
@@ -186,19 +186,15 @@ public class WaveformGridView extends View {
 	}
 
 	private void initAxials(WaveformGridViewConfig config) {
-		// if (mConfig.NumColumns != config.NumColumns) {
 		mAxialYSet.clear();
 		final float delta = mWidth / (config.NumColumns - 1);
 		for (int i = 0; i < config.NumColumns; ++i) {
 			mAxialYSet.add(i * delta);
 		}
-		// }
-		// if (mConfig.NumRows != config.NumRows) {
 		mAxialXSet.clear();
 		final float delta1 = mHeight / (config.NumRows - 1);
 		for (int i = 0; i < config.NumRows; ++i) {
 			mAxialXSet.add(i * delta1);
 		}
-		// }
 	}
 }
