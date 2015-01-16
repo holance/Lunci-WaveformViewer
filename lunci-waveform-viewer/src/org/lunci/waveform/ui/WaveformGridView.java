@@ -156,7 +156,6 @@ public class WaveformGridView extends View {
 				try {
 					mCanvas.drawColor(mConfig.BackgroundColor);
 					for (Float f : mAxialXSet) {
-						Log.i(TAG, "drawing x=" + f);
 						mCanvas.drawLine(0, f, mWidth, f, mAxialXPaint);
 					}
 					for (Float f : mAxialYSet) {

@@ -39,13 +39,11 @@ public class WaveformPlotThread extends Thread {
 	public static final int MESSAGE_SET_WIDTH_HEIGHT = 2;
 	public static final int MESSAGE_CLEAR_WAVEFORM = 3;
 	public static final int MESSAGE_MOVE_VERTICAL = 4;
-	public static final int MESSAGE_CLEAR_GRID = 5;
-	public static final int MESSAGE_MOVE_HORIZONTAL = 6;
-	public static final int MESSAGE_DRAW_GRID = 7;
+	public static final int MESSAGE_CLEAR_AREA = 5;
 	private static final String TAG = WaveformPlotThread.class.getSimpleName();
 	private final SurfaceHolder holder;
 	private final Point mAxialCoordinate = new Point(0, 0);
-	private final Rect mClearRect = new Rect();
+	private final Rect mOverheadClearRect = new Rect();
 	// Paints
 	private final Paint mLinePaint = new Paint();
 	private final Paint mAxialPaint = new Paint();
@@ -66,6 +64,8 @@ public class WaveformPlotThread extends Thread {
 	private WaveformViewConfig mConfig = new WaveformViewConfig();
 	private float mScaling = 1f;
 	private boolean mClearScreenFlag = false;
+	private boolean mClearAreaFlag = false;
+	private final Rect mClearAreaRect = new Rect();
 	private final Handler mHandler = new Handler(new Handler.Callback() {
 
 		@Override
@@ -94,6 +94,18 @@ public class WaveformPlotThread extends Thread {
 								+ mVerticalMoveOffset);
 					}
 				}
+				break;
+			case MESSAGE_CLEAR_AREA:
+				if (msg.obj != null) {
+					final Rect rect = (Rect) msg.obj;
+					if (rect != null) {
+						mClearAreaRect.left = rect.left;
+						mClearAreaRect.right = rect.right;
+						mClearAreaRect.top = rect.top;
+						mClearAreaRect.bottom = rect.bottom;
+					}
+				}
+				mClearAreaFlag = true;
 				break;
 			default:
 				result = false;
@@ -131,7 +143,7 @@ public class WaveformPlotThread extends Thread {
 	public void setWidthHeight(int width, int height) {
 		if (this.isAlive()) {
 			Message.obtain(mHandler, MESSAGE_SET_WIDTH_HEIGHT, width, height)
-			.sendToTarget();
+					.sendToTarget();
 		} else {
 			updateWidthHeightSafe(width, height);
 		}
@@ -140,8 +152,8 @@ public class WaveformPlotThread extends Thread {
 	private void updateWidthHeightSafe(int width, int height) {
 		mViewHeight = height;
 		mViewWidth = width;
-		mClearRect.top = 0;
-		mClearRect.bottom = height;
+		mOverheadClearRect.top = 0;
+		mOverheadClearRect.bottom = height;
 		updateScaling(height, mConfig.DataMaxValue, mConfig.DataMinValue);
 		mAxialCoordinate.y = height / 2;
 		mAutoPositionNominalValue = height / 2;
@@ -204,8 +216,19 @@ public class WaveformPlotThread extends Thread {
 						}
 					}
 					mClearScreenFlag = false;
-					// mVerticalMoveOffset = 0;
 					resetAutoPositionParams();
+				} else if (mClearAreaFlag) {
+					if (BuildConfig.DEBUG) {
+						Log.i(TAG, "clear area:" + mClearAreaRect);
+					}
+					canvas = holder.lockCanvas(mClearAreaRect);
+					if (canvas != null) {
+						synchronized (holder) {
+							canvas.drawColor(Color.TRANSPARENT,
+									PorterDuff.Mode.CLEAR);
+						}
+					}
+					mClearAreaFlag = false;
 				} else {
 					if (cycleCompleted) {// take new y set if cycle is completed
 						y = mDataQueue.take();
@@ -216,19 +239,20 @@ public class WaveformPlotThread extends Thread {
 					if (mConfig.ShowFPS) {
 						startTime = System.currentTimeMillis();
 					}
-					mClearRect.left = (int) mCurrentX;
-					mClearRect.right = (int) (mCurrentX + deltaX + mConfig.LeadingClearWidth);
-					canvas = holder.lockCanvas(mClearRect);
+					mOverheadClearRect.left = (int) mCurrentX;
+					mOverheadClearRect.right = (int) (mCurrentX + deltaX + mConfig.LeadingClearWidth);
+					canvas = holder.lockCanvas(mOverheadClearRect);
 					if (canvas != null) {
 						synchronized (holder) {
 							canvas.drawColor(Color.TRANSPARENT,
 									PorterDuff.Mode.CLEAR);
 							if (mConfig.ShowCenterLineY) {
-								canvas.drawLine(mClearRect.left,
+								canvas.drawLine(mOverheadClearRect.left,
 										mAxialCoordinate.y
-										+ mVerticalMoveOffset,
-										mClearRect.right, mAxialCoordinate.y
-										+ mVerticalMoveOffset,
+												+ mVerticalMoveOffset,
+										mOverheadClearRect.right,
+										mAxialCoordinate.y
+												+ mVerticalMoveOffset,
 										mAxialPaint);
 							}
 							remainIndex = PlotPoints(canvas, deltaX, y,
@@ -445,11 +469,19 @@ public class WaveformPlotThread extends Thread {
 			mDataQueue = new ArrayBlockingQueue<int[]>(
 					config.DefaultDataBufferSize);
 		}
+		if (mConfig.PaddingLeft < config.PaddingLeft) {
+			mClearAreaRect.left = 0;
+			mClearAreaRect.right = config.PaddingLeft;
+			mClearAreaRect.top = 0;
+			mClearAreaRect.bottom = mViewHeight;
+			mClearAreaFlag = true;
+			if (mCurrentX < config.PaddingLeft)
+				mCurrentX = config.PaddingLeft;
+		}
+		mDeltaX = config.DrawingDeltaX;
+		mAxialPaint.setColor(config.AxialColor);
+		mLinePaint.setColor(config.LineColor);
 		mConfig = config;
-		mDeltaX = mConfig.DrawingDeltaX;
-		mAxialPaint.setColor(mConfig.AxialColor);
-		// mBackgroundPaint.setColor(mConfig.BackgroundColor);
-		mLinePaint.setColor(mConfig.LineColor);
 	}
 
 	private void updateScaling(int height, int dataMax, int dataMin) {
@@ -473,7 +505,7 @@ public class WaveformPlotThread extends Thread {
 			}
 			mHandler.removeMessages(MESSAGE_SET_CONFIG);
 			Message.obtain(mHandler, MESSAGE_SET_CONFIG, 0, 0, config)
-			.sendToTarget();
+					.sendToTarget();
 		} else {
 			updateConfig(config);
 		}
