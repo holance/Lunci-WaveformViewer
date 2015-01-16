@@ -13,16 +13,15 @@
   ~  * See the License for the specific language governing permissions and
   ~  * limitations under the License.
   -->
-
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/darker_gray"
     android:keepScreenOn="true"
     android:orientation="vertical"
-    tools:context="com.siemens.healthcare.hisibwaveformviewer.WaveformActivity"
-    android:background="@android:color/black">
+    tools:context="com.siemens.healthcare.hisibwaveformviewer.WaveformActivity" >
 
     <LinearLayout
         android:id="@+id/linearLayout_perf"

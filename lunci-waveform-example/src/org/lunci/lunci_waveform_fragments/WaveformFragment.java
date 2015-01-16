@@ -16,6 +16,11 @@
 
 package org.lunci.lunci_waveform_fragments;
 
+import org.lunci.lunci_waveform_example.BuildConfig;
+import org.lunci.lunci_waveform_example.R;
+import org.lunci.waveform.ui.WaveformView;
+import org.lunci.waveform.ui.WaveformViewConfig;
+
 import android.content.ComponentName;
 import android.os.Bundle;
 import android.os.ConditionVariable;
@@ -26,11 +31,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ZoomControls;
-
-import org.lunci.lunci_waveform_example.BuildConfig;
-import org.lunci.lunci_waveform_example.R;
-import org.lunci.waveform.ui.WaveformView;
-import org.lunci.waveform.ui.WaveformViewConfig;
 
 public class WaveformFragment extends Fragment_ServiceManagerBase {
 	private static final String TAG = WaveformFragment.class.getSimpleName();
@@ -73,6 +73,7 @@ public class WaveformFragment extends Fragment_ServiceManagerBase {
 		config.DataMaxValue = 10000;
 		config.DrawingDeltaX = 8;
 		config.PaddingLeft = 30;
+		config.ShowCenterLineY = false;
 		config.AutoPositionAfterZoom = true;
 		config.EnableVerticalGestureMove = true;
 		config.VerticalGestureMoveRatio = 0.5f;

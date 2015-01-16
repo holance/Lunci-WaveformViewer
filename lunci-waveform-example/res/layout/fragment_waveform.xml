@@ -20,6 +20,10 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="com.siemens.healthcare.fragments.WaveformFragment">
+    <org.lunci.waveform.ui.WaveformGridView
+        android:id="@+id/waveformGridView_1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
     <org.lunci.waveform.ui.WaveformView
         android:id="@+id/waveformView_1"
         android:layout_width="match_parent"
