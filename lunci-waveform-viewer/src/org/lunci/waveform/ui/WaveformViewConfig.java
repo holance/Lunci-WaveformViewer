@@ -21,7 +21,7 @@ public class WaveformViewConfig {
     public int DataMinValue = Integer.MIN_VALUE;
     //	public int BackgroundColor = 0x00FFFFFF;
     public int LineColor = 0xFF00FF00;
-    public int AxialColor = 0xA02196F3;
+    public int AxisColor = 0xA02196F3;
     public int PlotThreadPriority = Thread.NORM_PRIORITY + 1;
     public float VerticalZoom = 1;
     public float HorizontalZoom = 1;

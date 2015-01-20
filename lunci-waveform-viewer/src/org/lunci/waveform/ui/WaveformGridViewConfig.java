@@ -7,7 +7,11 @@ public class WaveformGridViewConfig {
 	public int DataMinValue = Integer.MIN_VALUE;
 	public int NumColumns = 5;
 	public int NumRows = 5;
-	public int AxialXColor = 0xA003A9F4;
-	public int AxialYColor = 0xA003A9F4;
+	public int AxisXColor = 0xA003A9F4;
+	public int AxisYColor = 0xA003A9F4;
 	public int BackgroundColor = Color.BLACK;
+    public boolean ShowGridBorderLeft=true;
+    public boolean ShowGridBorderRight=true;
+    public boolean ShowGridBorderTop=true;
+    public boolean ShowGridBorderBottom=true;
 }

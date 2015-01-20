@@ -99,12 +99,12 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
         mConfig.LineColor = color;
     }
 
-    public int getAxialColor() {
-        return mConfig.AxialColor;
+    public int getAxisColor() {
+        return mConfig.AxisColor;
     }
 
-    public void setAxialColor(int color) {
-        mConfig.AxialColor = color;
+    public void setAxisColor(int color) {
+        mConfig.AxisColor = color;
     }
 
     public void putData(int[] dataValue) {
