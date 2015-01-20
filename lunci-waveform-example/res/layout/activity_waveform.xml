@@ -20,8 +20,7 @@
     android:layout_height="match_parent"
     android:background="@android:color/darker_gray"
     android:keepScreenOn="true"
-    android:orientation="vertical"
-    tools:context="com.siemens.healthcare.hisibwaveformviewer.WaveformActivity" >
+    android:orientation="vertical" >
 
     <LinearLayout
         android:id="@+id/linearLayout_perf"

@@ -42,11 +42,11 @@ public class WaveformPlotThread extends Thread {
 	public static final int MESSAGE_CLEAR_AREA = 5;
 	private static final String TAG = WaveformPlotThread.class.getSimpleName();
 	private final SurfaceHolder holder;
-	private final Point mAxialCoordinate = new Point(0, 0);
+	private final Point mAxisCoordinate = new Point(0, 0);
 	private final Rect mOverheadClearRect = new Rect();
 	// Paints
 	private final Paint mLinePaint = new Paint();
-	private final Paint mAxialPaint = new Paint();
+	private final Paint mAxisPaint = new Paint();
 	private final Paint mFPSPaint = new Paint();
 	// FPS drawing
 	private final Rect mFPSTextClearRect = new Rect();
@@ -125,10 +125,10 @@ public class WaveformPlotThread extends Thread {
 		super();
 		this.setPriority(Thread.NORM_PRIORITY);
 		holder = surfaceHolder;
-		mAxialPaint.setColor(view.getAxialColor());
-		mAxialPaint.setStyle(Paint.Style.STROKE);
-		mAxialPaint.setAntiAlias(true);
-		mAxialPaint.setStrokeWidth(1);
+		mAxisPaint.setColor(view.getAxisColor());
+		mAxisPaint.setStyle(Paint.Style.STROKE);
+		mAxisPaint.setAntiAlias(true);
+		mAxisPaint.setStrokeWidth(1);
 		mLinePaint.setColor(view.getLineColor());
 		mLinePaint.setStyle(Paint.Style.STROKE);
 		mLinePaint.setAntiAlias(true);
@@ -155,7 +155,7 @@ public class WaveformPlotThread extends Thread {
 		mOverheadClearRect.top = 0;
 		mOverheadClearRect.bottom = height;
 		updateScaling(height, mConfig.DataMaxValue, mConfig.DataMinValue);
-		mAxialCoordinate.y = height / 2;
+		mAxisCoordinate.y = height / 2;
 		mAutoPositionNominalValue = height / 2;
 		mMaxY = Float.MIN_VALUE;
 		mMinY = Float.MAX_VALUE;
@@ -210,8 +210,8 @@ public class WaveformPlotThread extends Thread {
 									PorterDuff.Mode.CLEAR);
 							if (mConfig.ShowCenterLineY) {
 								canvas.drawLine(mConfig.PaddingLeft,
-										mAxialCoordinate.y, mViewWidth,
-										mAxialCoordinate.y, mAxialPaint);
+										mAxisCoordinate.y, mViewWidth,
+										mAxisCoordinate.y, mAxisPaint);
 							}
 						}
 					}
@@ -248,12 +248,12 @@ public class WaveformPlotThread extends Thread {
 									PorterDuff.Mode.CLEAR);
 							if (mConfig.ShowCenterLineY) {
 								canvas.drawLine(mOverheadClearRect.left,
-										mAxialCoordinate.y
+										mAxisCoordinate.y
 												+ mVerticalMoveOffset,
 										mOverheadClearRect.right,
-										mAxialCoordinate.y
+										mAxisCoordinate.y
 												+ mVerticalMoveOffset,
-										mAxialPaint);
+                                        mAxisPaint);
 							}
 							remainIndex = PlotPoints(canvas, deltaX, y,
 									remainIndex);
@@ -479,7 +479,7 @@ public class WaveformPlotThread extends Thread {
 				mCurrentX = config.PaddingLeft;
 		}
 		mDeltaX = config.DrawingDeltaX;
-		mAxialPaint.setColor(config.AxialColor);
+		mAxisPaint.setColor(config.AxisColor);
 		mLinePaint.setColor(config.LineColor);
 		mConfig = config;
 	}

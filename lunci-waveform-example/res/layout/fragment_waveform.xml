@@ -18,8 +18,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context="com.siemens.healthcare.fragments.WaveformFragment">
+    android:orientation="vertical">
     <org.lunci.waveform.ui.WaveformGridView
         android:id="@+id/waveformGridView_1"
         android:layout_width="match_parent"
