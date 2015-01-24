@@ -134,11 +134,11 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
     }
 
     public WaveformViewConfig getConfig() {
-        return mConfig;
+        return mConfig.clone();
     }
 
     public void setConfig(WaveformViewConfig config) {
-        mConfig = config;
+        config.cloneParams(mConfig);
         if (mPlotThread != null)
             mPlotThread.setConfig(mConfig);
     }
@@ -205,7 +205,7 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
                     && e2.getAction() == MotionEvent.ACTION_MOVE) {
                 if (mPlotThread != null) {
                     mPlotThread.moveVertical(distanceY
-                            * mConfig.VerticalGestureMoveRatio);
+                            * mConfig.VerticalGestureMoveRatio/mConfig.VerticalZoom);
                     return true;
                 }
             }
