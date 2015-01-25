@@ -31,6 +31,7 @@ import android.view.SurfaceHolder;
 
 import org.lunci.waveform_viewer.BuildConfig;
 
+import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -61,6 +62,7 @@ public class WaveformPlotThread extends Thread {
     private float mCurrentY = Float.MAX_VALUE;// unit:pixel.
     private float mMaxY, mMinY;
     private BlockingQueue<int[]> mDataQueue;
+    private Queue<int[]> mDataOuputQueue=null;
     private WaveformViewConfig mConfig = new WaveformViewConfig();
     private float mScaling = 1f;
     private boolean mClearScreenFlag = false;
@@ -176,7 +178,7 @@ public class WaveformPlotThread extends Thread {
         long startTime = 0;
         boolean cycleCompleted = true;
         int remainIndex = 0;
-        int[] y = null;
+        int[] yData=null;
         while (!stop) {
             canvas = null;
             final float deltaX = mDeltaX * mConfig.HorizontalZoom;
@@ -231,8 +233,8 @@ public class WaveformPlotThread extends Thread {
                     mClearAreaFlag = false;
                 } else {
                     if (cycleCompleted) {// take new y set if cycle is completed
-                        y = mDataQueue.take();
-                        if (y.length == 0) continue;
+                        yData = mDataQueue.take();
+                        if (yData.length == 0) continue;
                     }
                     if (mConfig.ShowFPS && mCurrentX <= mFPSTextClearRect.right) {
                         mOnShowFPSFlag = true;
@@ -256,17 +258,13 @@ public class WaveformPlotThread extends Thread {
                                                 + mVerticalMoveOffset,
                                         mAxisPaint);
                             }
-                            remainIndex = PlotPoints(canvas, deltaX, y,
+                            remainIndex = PlotPoints(canvas, deltaX, yData,
                                     remainIndex);
-                            cycleCompleted = remainIndex == 0 ? true : false;// reach
-                            // end
-                            // of
-                            // view,
-                            // cycle
-                            // is
-                            // not
-                            // completed
-                            // yet.
+                            // reach end of view, cycle is not completed yet.
+                            cycleCompleted = remainIndex == 0 ? true : false;
+                            if(cycleCompleted && mDataOuputQueue!=null){
+                                mDataOuputQueue.offer(yData);
+                            }
                         }
                     }
                     if (mConfig.ShowFPS) {
@@ -438,6 +436,12 @@ public class WaveformPlotThread extends Thread {
     public void moveVertical(float y) {
         if (this.isAlive()) {
             Message.obtain(mHandler, MESSAGE_MOVE_VERTICAL, y).sendToTarget();
+        }
+    }
+    
+    public void attachDataOutputQueue(Queue<int[]> outputQueue){
+        synchronized (this) {
+            mDataOuputQueue = outputQueue;
         }
     }
 }

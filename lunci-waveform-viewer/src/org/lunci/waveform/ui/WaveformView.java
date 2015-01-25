@@ -29,6 +29,7 @@ import android.view.View;
 
 import org.lunci.waveform_viewer.BuildConfig;
 
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 
 public class WaveformView extends SurfaceView implements SurfaceHolder.Callback {
@@ -171,11 +172,27 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
         }
     }
 
-    public synchronized BlockingQueue<int[]> getDataQueue() {
+    /**
+     * Attach a data output queue to receive data which is already drawn by waveform view.
+     *
+     * @return Return the internal data drawing queue from waveform view.
+     */
+    public Queue<int[]> getDataQueue() {
         if (mPlotThread != null)
             return mPlotThread.getDataQueue();
         else
             return null;
+    }
+
+    /**
+     * Attach a data output queue to receive data which is already drawn by waveform view.
+     *
+     * @param outputQueue The first integer to add
+     */
+    public void attachDataOutputQueue(Queue<int[]> outputQueue){
+        if(mPlotThread!=null){
+            mPlotThread.attachDataOutputQueue(outputQueue);
+        }
     }
 
     private class GestureListener implements GestureDetector.OnGestureListener{

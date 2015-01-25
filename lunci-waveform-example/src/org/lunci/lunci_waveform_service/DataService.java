@@ -37,9 +37,9 @@ import org.lunci.waveform.sim.RectWaveGenerator;
 import org.lunci.waveform.sim.SineWaveGenerator;
 
 import java.lang.ref.WeakReference;
+import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.BlockingQueue;
 
 import de.greenrobot.event.EventBus;
 
@@ -170,7 +170,7 @@ public class DataService extends Service {
 		mConfig = config;
 	}
 
-	public int addGraphDataClient(BlockingQueue<int[]> queue, int sourceIndex) {
+	public int addGraphDataClient(Queue<int[]> queue, int sourceIndex) {
 		final int key = queue.hashCode();
 		synchronized (mClients) {
 			mClients.append(key, new GraphDataClient(key, queue, sourceIndex));
@@ -277,18 +277,18 @@ public class DataService extends Service {
 	}
 
 	private final class GraphDataClient {
-		private final WeakReference<BlockingQueue<int[]>> mQueue;
+		private final WeakReference<Queue<int[]>> mQueue;
 		private final int mId;
 		private final int mDataSourceIndex;
 
-		public GraphDataClient(int id, BlockingQueue<int[]> queue,
+		public GraphDataClient(int id, Queue<int[]> queue,
 				int dataSourceIndex) {
 			mId = id;
-			mQueue = new WeakReference<BlockingQueue<int[]>>(queue);
+			mQueue = new WeakReference<Queue<int[]>>(queue);
 			mDataSourceIndex = dataSourceIndex;
 		}
 
-		public WeakReference<BlockingQueue<int[]>> getQueue() {
+		public WeakReference<Queue<int[]>> getQueue() {
 			return mQueue;
 		}
 
