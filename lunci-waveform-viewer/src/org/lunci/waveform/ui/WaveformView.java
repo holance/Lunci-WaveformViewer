@@ -19,6 +19,8 @@ package org.lunci.waveform.ui;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.PixelFormat;
+import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -29,7 +31,6 @@ import android.view.View;
 
 import org.lunci.waveform_viewer.BuildConfig;
 
-import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 
 public class WaveformView extends SurfaceView implements SurfaceHolder.Callback {
@@ -49,7 +50,9 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 
     public WaveformView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        this.setZOrderOnTop(true);
+        if(!this.isInEditMode()) {
+            this.setZOrderOnTop(true);
+        }
         getHolder().setFormat(PixelFormat.TRANSPARENT);
         getHolder().addCallback(this);
         mGestureDetector = new GestureDetector(this.getContext(),
@@ -172,26 +175,16 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
         }
     }
 
-    /**
-     * Attach a data output queue to receive data which is already drawn by waveform view.
-     *
-     * @return Return the internal data drawing queue from waveform view.
-     */
-    public Queue<int[]> getDataQueue() {
+    public synchronized BlockingQueue<int[]> getDataQueue() {
         if (mPlotThread != null)
             return mPlotThread.getDataQueue();
         else
             return null;
     }
 
-    /**
-     * Attach a data output queue to receive data which is already drawn by waveform view.
-     *
-     * @param outputQueue The first integer to add
-     */
-    public void attachDataOutputQueue(Queue<int[]> outputQueue){
+    public void clearWaveform(){
         if(mPlotThread!=null){
-            mPlotThread.attachDataOutputQueue(outputQueue);
+            mPlotThread.clearWaveform();
         }
     }
 

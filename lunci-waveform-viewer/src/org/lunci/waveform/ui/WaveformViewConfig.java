@@ -65,27 +65,6 @@ public class WaveformViewConfig implements Parcelable, Cloneable{
         config.VerticalGestureMoveRatio=VerticalGestureMoveRatio;
     }
 
-    private WaveformViewConfig(Parcel in){
-        super();
-        DataMaxValue=in.readInt();
-        DataMinValue=in.readInt();
-        LineColor=in.readInt();
-        AxisColor=in.readInt();
-        PlotThreadPriority=in.readInt();
-        VerticalZoom=in.readFloat();
-        HorizontalZoom=in.readFloat();
-        DefaultDataBufferSize=in.readInt();
-        DrawingDeltaX=in.readInt();
-        LeadingClearWidth=in.readInt();
-        PaddingLeft=in.readInt();
-        VerticalGestureMoveRatio=in.readFloat();
-        final boolean[] boolArray=new boolean[4];
-        in.readBooleanArray(boolArray);
-        AutoPositionAfterZoom=boolArray[0];
-        ShowFPS=boolArray[1];
-        ShowCenterLineY=boolArray[2];
-        EnableVerticalGestureMove=boolArray[3];
-    }
 
     @Override
     public int describeContents() {
@@ -94,31 +73,48 @@ public class WaveformViewConfig implements Parcelable, Cloneable{
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(DataMaxValue);
-        dest.writeInt(DataMinValue);
-        dest.writeInt(LineColor);
-        dest.writeInt(AxisColor);
-        dest.writeInt(PlotThreadPriority);
-        dest.writeFloat(VerticalZoom);
-        dest.writeFloat(HorizontalZoom);
-        dest.writeInt(DefaultDataBufferSize);
-        dest.writeInt(DrawingDeltaX);
-        dest.writeInt(LeadingClearWidth);
-        dest.writeInt(PaddingLeft);
-        dest.writeFloat(VerticalGestureMoveRatio);
-        dest.writeBooleanArray(new boolean[]{AutoPositionAfterZoom, ShowFPS, ShowCenterLineY, EnableVerticalGestureMove});
+        dest.writeInt(this.DataMaxValue);
+        dest.writeInt(this.DataMinValue);
+        dest.writeInt(this.LineColor);
+        dest.writeInt(this.AxisColor);
+        dest.writeInt(this.PlotThreadPriority);
+        dest.writeFloat(this.VerticalZoom);
+        dest.writeFloat(this.HorizontalZoom);
+        dest.writeByte(AutoPositionAfterZoom ? (byte) 1 : (byte) 0);
+        dest.writeInt(this.DefaultDataBufferSize);
+        dest.writeInt(this.DrawingDeltaX);
+        dest.writeByte(ShowFPS ? (byte) 1 : (byte) 0);
+        dest.writeInt(this.LeadingClearWidth);
+        dest.writeByte(ShowCenterLineY ? (byte) 1 : (byte) 0);
+        dest.writeInt(this.PaddingLeft);
+        dest.writeByte(EnableVerticalGestureMove ? (byte) 1 : (byte) 0);
+        dest.writeFloat(this.VerticalGestureMoveRatio);
     }
 
-    public static Parcelable.Creator<WaveformViewConfig> CREATOR
-            = new Parcelable.Creator<WaveformViewConfig>(){
+    private WaveformViewConfig(Parcel in) {
+        this.DataMaxValue = in.readInt();
+        this.DataMinValue = in.readInt();
+        this.LineColor = in.readInt();
+        this.AxisColor = in.readInt();
+        this.PlotThreadPriority = in.readInt();
+        this.VerticalZoom = in.readFloat();
+        this.HorizontalZoom = in.readFloat();
+        this.AutoPositionAfterZoom = in.readByte() != 0;
+        this.DefaultDataBufferSize = in.readInt();
+        this.DrawingDeltaX = in.readInt();
+        this.ShowFPS = in.readByte() != 0;
+        this.LeadingClearWidth = in.readInt();
+        this.ShowCenterLineY = in.readByte() != 0;
+        this.PaddingLeft = in.readInt();
+        this.EnableVerticalGestureMove = in.readByte() != 0;
+        this.VerticalGestureMoveRatio = in.readFloat();
+    }
 
-        @Override
-        public WaveformViewConfig createFromParcel(Parcel in){
-            final WaveformViewConfig config=new WaveformViewConfig(in);
-            return config;
+    public static final Creator<WaveformViewConfig> CREATOR = new Creator<WaveformViewConfig>() {
+        public WaveformViewConfig createFromParcel(Parcel source) {
+            return new WaveformViewConfig(source);
         }
 
-        @Override
         public WaveformViewConfig[] newArray(int size) {
             return new WaveformViewConfig[size];
         }

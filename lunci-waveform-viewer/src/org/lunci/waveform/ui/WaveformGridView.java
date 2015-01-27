@@ -94,12 +94,14 @@ public class WaveformGridView extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565);
-        mCanvas.setBitmap(mBitmap);
-        mCanvas.drawColor(mConfig.BackgroundColor);
-        mWidth = w;
-        mHeight = h;
-        initAxises(mConfig);
+        if(!isInEditMode()) {
+            mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565);
+            mCanvas.setBitmap(mBitmap);
+            mCanvas.drawColor(mConfig.BackgroundColor);
+            mWidth = w;
+            mHeight = h;
+            initAxises(mConfig);
+        }
         super.onSizeChanged(w, h, oldw, oldh);
         if (mHandler != null)
             mHandler.sendEmptyMessage(MESSAGE_DRAW_GRID);
@@ -152,7 +154,6 @@ public class WaveformGridView extends View {
     private boolean drawGrid(Canvas canvas) {
         synchronized (this) {
             if (mBitmap != null) {
-                Log.i(TAG, "drawGrid");
                 try {
                     mCanvas.drawColor(mConfig.BackgroundColor);
                     for (Float f : mAxisXSet) {
@@ -174,13 +175,13 @@ public class WaveformGridView extends View {
     }
 
     public void setConfig(WaveformGridViewConfig config) {
-        Message.obtain(mHandler, MESSAGE_SET_CONFIG, config).sendToTarget();
+        Message.obtain(mHandler, MESSAGE_SET_CONFIG).sendToTarget();
     }
 
     private void setConfigSafe(WaveformGridViewConfig config) {
         initPaints(config);
         initAxises(config);
-        mConfig = config;
+        config.cloneParams(mConfig);
         Message.obtain(mHandler, MESSAGE_DRAW_GRID).sendToTarget();
     }
 
@@ -205,5 +206,9 @@ public class WaveformGridView extends View {
             else
                 mAxisXSet.add(i * delta1);
         }
+    }
+
+    public WaveformGridViewConfig getConfig(){
+        return mConfig.clone();
     }
 }
