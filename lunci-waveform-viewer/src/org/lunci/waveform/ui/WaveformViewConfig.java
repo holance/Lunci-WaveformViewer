@@ -24,7 +24,7 @@ public class WaveformViewConfig implements Parcelable, Cloneable{
     public int DataMinValue = Integer.MIN_VALUE;
     public int LineColor = 0xFF00FF00;
     public int AxisColor = 0xA02196F3;
-    public int PlotThreadPriority = Thread.NORM_PRIORITY + 1;
+    public int PlotThreadPriority = Thread.NORM_PRIORITY;
     public float VerticalZoom = 1;
     public float HorizontalZoom = 1;
     public boolean AutoPositionAfterZoom = false;

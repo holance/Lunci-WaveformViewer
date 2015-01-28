@@ -31,6 +31,7 @@ import android.view.SurfaceHolder;
 
 import org.lunci.waveform_viewer.BuildConfig;
 
+import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -59,8 +60,10 @@ public class WaveformPlotThread extends Thread {
     private float mDeltaX = 4;// unit:pixel.
     private float mCurrentX = 0;// unit:pixel.
     private float mCurrentY = Float.MAX_VALUE;// unit:pixel.
-    private float mMaxY, mMinY;
-    private BlockingQueue<int[]> mDataQueue;
+    private float mMaxY=Integer.MAX_VALUE;
+    private float mMinY=Integer.MIN_VALUE;
+    private BlockingQueue<int[]> mDataQueue=null;
+    private Queue<int[]> mOutputQueue=null;
     private WaveformViewConfig mConfig = new WaveformViewConfig();
     private float mScaling = 1f;
     private boolean mClearScreenFlag = false;
@@ -231,6 +234,9 @@ public class WaveformPlotThread extends Thread {
                     mClearAreaFlag = false;
                 } else {
                     if (cycleCompleted) {// take new y set if cycle is completed
+                        if(y!=null && mOutputQueue!=null){
+                            mOutputQueue.offer(y);
+                        }
                         y = mDataQueue.take();
                         if (y.length == 0) continue;
                     }
@@ -312,33 +318,37 @@ public class WaveformPlotThread extends Thread {
         for (; index < newY.length; ++index) {
             tempX += delta;
             element = newY[index];
-            // if (element > mConfig.DataMaxValue
-            // || element < mConfig.DataMinValue) {
-            // continue;
-            // }
-            float scaledY = mViewHeight - element * scale;
-            scaledY += mVerticalMoveOffset;
-            if (mConfig.VerticalZoom != 1) {
-                float center = 0;
-                if (mConfig.AutoPositionAfterZoom) {
-                    center = mAutoPositionNominalValue;
-                    if (mMaxY < scaledY) {
-                        mMaxY = scaledY;
-                    } else if (mMinY > scaledY) {
-                        mMinY = scaledY;
-                    }
-                } else
-                    center = mViewHeight / 2;
-                scaledY = scaledY > center ? (scaledY - center)
-                        * mConfig.VerticalZoom + center : center
-                        - (center - scaledY) * mConfig.VerticalZoom;
-            }
+            if(element==Integer.MIN_VALUE){
+                mCurrentY = Float.MAX_VALUE;
+                mCurrentX=tempX;
+            }else {
+                float scaledY = mViewHeight - element * scale;
+                scaledY += mVerticalMoveOffset;
+                if (mConfig.VerticalZoom != 1) {
+                    float center = 0;
+                    if (mConfig.AutoPositionAfterZoom) {
+                        center = mAutoPositionNominalValue;
+                        if (mMaxY < scaledY) {
+                            mMaxY = scaledY;
+                        } else if (mMinY > scaledY) {
+                            mMinY = scaledY;
+                        }
+                    } else
+                        center = mViewHeight / 2;
+                    scaledY = scaledY > center ? (scaledY - center)
+                            * mConfig.VerticalZoom + center : center
+                            - (center - scaledY) * mConfig.VerticalZoom;
+                }
 
-            if (scaledY >= 0 && scaledY <= mViewHeight) {
-                canvas.drawLine(mCurrentX, mCurrentY, tempX, scaledY, mLinePaint);
+                if (scaledY >= 0 && scaledY <= mViewHeight) {
+                    if (mCurrentY == Float.MAX_VALUE) {
+                        mCurrentY = scaledY;
+                    }
+                    canvas.drawLine(mCurrentX, mCurrentY, tempX, scaledY, mLinePaint);
+                }
+                mCurrentY = scaledY;
+                mCurrentX = tempX;
             }
-            mCurrentY = scaledY;
-            mCurrentX = tempX;
             if (mCurrentX >= mViewWidth) {
                 mCurrentX = mConfig.PaddingLeft;
                 mCurrentY = Float.MAX_VALUE;
@@ -362,10 +372,6 @@ public class WaveformPlotThread extends Thread {
 
     public synchronized BlockingQueue<int[]> getDataQueue() {
         return mDataQueue;
-    }
-
-    public synchronized void setDataQueue(BlockingQueue<int[]> dataQueue) {
-        mDataQueue = dataQueue;
     }
 
     /**
@@ -439,6 +445,12 @@ public class WaveformPlotThread extends Thread {
     public void moveVertical(float y) {
         if (this.isAlive()) {
             Message.obtain(mHandler, MESSAGE_MOVE_VERTICAL, y).sendToTarget();
+        }
+    }
+
+    public void setDataOutputQueue(Queue<int[]> queue){
+        synchronized (this) {
+            mOutputQueue = queue;
         }
     }
 }

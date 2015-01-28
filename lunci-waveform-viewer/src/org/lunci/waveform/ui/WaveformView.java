@@ -31,6 +31,7 @@ import android.view.View;
 
 import org.lunci.waveform_viewer.BuildConfig;
 
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 
 public class WaveformView extends SurfaceView implements SurfaceHolder.Callback {
@@ -47,6 +48,7 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
     private final GestureDetector.OnGestureListener mOnGestureListener = new GestureListener();
     private WaveformPlotThread mPlotThread;
     private WaveformViewConfig mConfig = new WaveformViewConfig();
+    private Queue<int[]> mTempDataOutputQueue=null;
 
     public WaveformView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -73,8 +75,12 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
         if (BuildConfig.DEBUG) {
             Log.i(TAG, "surfaceCreated");
         }
-        this.setOnTouchListener(mTouchListener);
+        super.setOnTouchListener(mTouchListener);
         mPlotThread = new WaveformPlotThread(holder, this);
+        if(mTempDataOutputQueue!=null){
+            mPlotThread.setDataOutputQueue(mTempDataOutputQueue);
+            mTempDataOutputQueue=null;
+        }
         mPlotThread.setWidthHeight(this.getWidth(), this.getHeight());
         mPlotThread.start();
     }
@@ -135,6 +141,14 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 
     public void setDataMin(int mDataMin) {
         mConfig.DataMinValue = mDataMin;
+    }
+
+    public void setDataOutputQueue(Queue<int[]> queue){
+        if(mPlotThread!=null){
+            mPlotThread.setDataOutputQueue(queue);
+        }else{
+            mTempDataOutputQueue=queue;
+        }
     }
 
     public WaveformViewConfig getConfig() {
@@ -204,7 +218,7 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
 
         @Override
         public boolean onSingleTapUp(MotionEvent e) {
-            // TODO Auto-generated method stub
+            WaveformView.this.callOnClick();
             return false;
         }
 
