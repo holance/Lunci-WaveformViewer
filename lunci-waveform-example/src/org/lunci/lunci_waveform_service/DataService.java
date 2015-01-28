@@ -43,10 +43,6 @@ import java.util.TimerTask;
 
 import de.greenrobot.event.EventBus;
 
-/**
- * @author z0034hwj
- *
- */
 public class DataService extends Service {
 
 	private static final String TAG = DataService.class.getSimpleName();
@@ -107,7 +103,7 @@ public class DataService extends Service {
 	private Looper mServiceLooper;
 	private HandlerThread mHandlerThread;
 	private Handler mHandler;
-	private DataSendingThread mDataSendingThread;
+	private DataSendingModule mDataSendingModule;
 	private DataServiceConfig mConfig = new DataServiceConfig();
 	private final SparseArray<GraphDataClient> mClients = new SparseArray<GraphDataClient>();
 
@@ -156,13 +152,13 @@ public class DataService extends Service {
 
 	private void startConnection() {
 		stopConnection();
-		mDataSendingThread = new DataSendingThread(mConfig);
-		mDataSendingThread.start();
+		mDataSendingModule = new DataSendingModule(mConfig);
+		mDataSendingModule.start();
 	}
 
 	private void stopConnection() {
-		if (mDataSendingThread != null) {
-			mDataSendingThread.interrupt();
+		if (mDataSendingModule != null) {
+			mDataSendingModule.interrupt();
 		}
 	}
 
@@ -190,14 +186,14 @@ public class DataService extends Service {
 		}
 	}
 
-	private final class DataSendingThread {
+	private final class DataSendingModule {
 		private final DataServiceConfig mConfig;
 		private final IWaveformGenerator[] mDataGenSet;
 		private long mDataCounterStartTime;
 		private long mDataCounterEndTime;
 		private Timer mTimer;
 
-		public DataSendingThread(DataServiceConfig config) {
+		public DataSendingModule(DataServiceConfig config) {
 			super();
 			// this.setPriority(Thread.NORM_PRIORITY + 1);
 			mConfig = config;
