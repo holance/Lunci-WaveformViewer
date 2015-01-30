@@ -85,7 +85,7 @@ public class WaveformGridView extends View {
         mAxisXPaint.setColor(config.AxisXColor);
         mAxisXPaint.setStyle(Paint.Style.STROKE);
         mAxisXPaint.setAntiAlias(true);
-        mAxisXPaint.setStrokeWidth(1);
+        mAxisXPaint.setStrokeWidth(2);
         mAxisYPaint.setColor(config.AxisYColor);
         mAxisYPaint.setStyle(Paint.Style.STROKE);
         mAxisYPaint.setAntiAlias(true);

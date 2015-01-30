@@ -42,6 +42,13 @@ public class WaveformPlotThread extends Thread {
     public static final int MESSAGE_MOVE_VERTICAL = 4;
     public static final int MESSAGE_CLEAR_AREA = 5;
     private static final String TAG = WaveformPlotThread.class.getSimpleName();
+    private static final WaveformView.WaveformViewCallbacks mDummyCallbacks=new WaveformView.WaveformViewCallbacks() {
+        @Override
+        public void onDataOut(int[] outData) {
+
+        }
+    };
+    private WaveformView.WaveformViewCallbacks mCallbacks=mDummyCallbacks;
     private final SurfaceHolder holder;
     private final Point mAxisCoordinate = new Point(0, 0);
     private final Rect mOverheadClearRect = new Rect();
@@ -63,7 +70,6 @@ public class WaveformPlotThread extends Thread {
     private float mMaxY=Integer.MAX_VALUE;
     private float mMinY=Integer.MIN_VALUE;
     private BlockingQueue<int[]> mDataQueue=null;
-    private Queue<int[]> mOutputQueue=null;
     private WaveformViewConfig mConfig = new WaveformViewConfig();
     private float mScaling = 1f;
     private boolean mClearScreenFlag = false;
@@ -131,7 +137,7 @@ public class WaveformPlotThread extends Thread {
         mAxisPaint.setColor(view.getAxisColor());
         mAxisPaint.setStyle(Paint.Style.STROKE);
         mAxisPaint.setAntiAlias(true);
-        mAxisPaint.setStrokeWidth(1);
+        mAxisPaint.setStrokeWidth(2);
         mLinePaint.setColor(view.getLineColor());
         mLinePaint.setStyle(Paint.Style.STROKE);
         mLinePaint.setAntiAlias(true);
@@ -234,8 +240,8 @@ public class WaveformPlotThread extends Thread {
                     mClearAreaFlag = false;
                 } else {
                     if (cycleCompleted) {// take new y set if cycle is completed
-                        if(y!=null && mOutputQueue!=null){
-                            mOutputQueue.offer(y);
+                        if(y!=null){
+                            mCallbacks.onDataOut(y);
                         }
                         y = mDataQueue.take();
                         if (y.length == 0) continue;
@@ -314,7 +320,8 @@ public class WaveformPlotThread extends Thread {
         final float scale = mScaling;
         float tempX = mCurrentX;
         int index = startIndex;
-        int element = 0;
+        int element;
+        final float min=mConfig.DataMinValue;
         for (; index < newY.length; ++index) {
             tempX += delta;
             element = newY[index];
@@ -322,7 +329,7 @@ public class WaveformPlotThread extends Thread {
                 mCurrentY = Float.MAX_VALUE;
                 mCurrentX=tempX;
             }else {
-                float scaledY = mViewHeight - element * scale;
+                float scaledY = mViewHeight-(element-min) * scale;
                 scaledY += mVerticalMoveOffset;
                 if (mConfig.VerticalZoom != 1) {
                     float center = 0;
@@ -405,6 +412,7 @@ public class WaveformPlotThread extends Thread {
         }
         mDeltaX = config.DrawingDeltaX;
         mAxisPaint.setColor(config.AxisColor);
+        mLinePaint.setStrokeWidth(config.LineThinkness);
         mLinePaint.setColor(config.LineColor);
         config.cloneParams(mConfig);
     }
@@ -448,9 +456,9 @@ public class WaveformPlotThread extends Thread {
         }
     }
 
-    public void setDataOutputQueue(Queue<int[]> queue){
+    public void setCallbacks(WaveformView.WaveformViewCallbacks callbacks){
         synchronized (this) {
-            mOutputQueue = queue;
+            mCallbacks=callbacks;
         }
     }
 }

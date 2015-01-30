@@ -36,19 +36,21 @@ import java.util.concurrent.BlockingQueue;
 
 public class WaveformView extends SurfaceView implements SurfaceHolder.Callback {
     private static final String TAG = WaveformView.class.getSimpleName();
+    public static interface WaveformViewCallbacks{
+        void onDataOut(int[] outData);
+    }
     private final GestureDetector mGestureDetector;
     private final OnTouchListener mTouchListener = new OnTouchListener() {
 
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-            mGestureDetector.onTouchEvent(event);
-            return true;
+            return mGestureDetector.onTouchEvent(event);
         }
     };
     private final GestureDetector.OnGestureListener mOnGestureListener = new GestureListener();
     private WaveformPlotThread mPlotThread;
     private WaveformViewConfig mConfig = new WaveformViewConfig();
-    private Queue<int[]> mTempDataOutputQueue=null;
+    private WaveformViewCallbacks mTempCallbacks=null;
 
     public WaveformView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -77,9 +79,9 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
         }
         super.setOnTouchListener(mTouchListener);
         mPlotThread = new WaveformPlotThread(holder, this);
-        if(mTempDataOutputQueue!=null){
-            mPlotThread.setDataOutputQueue(mTempDataOutputQueue);
-            mTempDataOutputQueue=null;
+        if(mTempCallbacks!=null){
+            mPlotThread.setCallbacks(mTempCallbacks);
+            mTempCallbacks=null;
         }
         mPlotThread.setWidthHeight(this.getWidth(), this.getHeight());
         mPlotThread.start();
@@ -143,11 +145,11 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
         mConfig.DataMinValue = mDataMin;
     }
 
-    public void setDataOutputQueue(Queue<int[]> queue){
+    public void setCallbacks(WaveformViewCallbacks callbacks){
         if(mPlotThread!=null){
-            mPlotThread.setDataOutputQueue(queue);
+            mPlotThread.setCallbacks(callbacks);
         }else{
-            mTempDataOutputQueue=queue;
+            mTempCallbacks=callbacks;
         }
     }
 
@@ -219,7 +221,7 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
         @Override
         public boolean onSingleTapUp(MotionEvent e) {
             WaveformView.this.callOnClick();
-            return false;
+            return true;
         }
 
         @Override
@@ -228,6 +230,7 @@ public class WaveformView extends SurfaceView implements SurfaceHolder.Callback 
             if (mConfig.EnableVerticalGestureMove
                     && e2.getAction() == MotionEvent.ACTION_MOVE) {
                 if (mPlotThread != null) {
+                    //Log.i(TAG, "on moving vertical");
                     mPlotThread.moveVertical(distanceY
                             * mConfig.VerticalGestureMoveRatio/mConfig.VerticalZoom);
                     return true;

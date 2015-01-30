@@ -22,6 +22,7 @@ import android.os.Parcelable;
 public class WaveformViewConfig implements Parcelable, Cloneable{
     public int DataMaxValue = Integer.MAX_VALUE;
     public int DataMinValue = Integer.MIN_VALUE;
+    public int LineThinkness=2;
     public int LineColor = 0xFF00FF00;
     public int AxisColor = 0xA02196F3;
     public int PlotThreadPriority = Thread.NORM_PRIORITY;
@@ -30,9 +31,9 @@ public class WaveformViewConfig implements Parcelable, Cloneable{
     public boolean AutoPositionAfterZoom = false;
     public int DefaultDataBufferSize = 1000;
     public int DrawingDeltaX = 8;
-    public boolean ShowFPS = true;
+    public boolean ShowFPS = false;
     public int LeadingClearWidth = 16;
-    public boolean ShowCenterLineY = true;
+    public boolean ShowCenterLineY = false;
     public int PaddingLeft = 0;
     public boolean EnableVerticalGestureMove = false;
     public float VerticalGestureMoveRatio = 1;
