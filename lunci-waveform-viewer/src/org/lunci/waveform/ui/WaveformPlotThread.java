@@ -59,7 +59,7 @@ public class WaveformPlotThread extends Thread {
     // FPS drawing
     private final Rect mFPSTextClearRect = new Rect();
     private final Rect mFPSBounds = new Rect();
-    private boolean stop = false;
+    private volatile boolean stop = false;
     private int mViewHeight = 0;// unit:pixel.
     private int mViewWidth = 0;// unit:pixel.
     private float mAutoPositionNominalValue = 0;
